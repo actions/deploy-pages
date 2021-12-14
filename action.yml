@@ -1,0 +1,23 @@
+name: 'Deploy to GitHub Pages'
+description: 'A GitHub Action to deploy an artifact to GitHub Pages'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+  pre: 'pre/index.js'
+inputs:
+  token:
+    description: 'GitHub token'
+    default: ${{ github.token }}
+    required: true
+  timeout:
+    description: 'Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)'
+    required: false
+    default: "600000"
+  error_count:
+    description: 'Maximum number of status report errors before cancelling a deployment (default: 10)'
+    required: false
+    default: "10"
+  reporting_interval:
+    description: 'Time in milliseconds between two deployment status report (default: 1 second)'
+    required: false
+    default: "1000"
