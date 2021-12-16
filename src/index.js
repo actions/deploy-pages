@@ -52,4 +52,4 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main()
+main().then(() => require('./pre'))
