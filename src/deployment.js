@@ -93,8 +93,7 @@ class Deployment {
             break
           } else if (res.data.status == 'deployment_failed') {
             // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
-            core.info('Deployment failed, try again later.')
-            core.setOutput('status', 'failed')
+            core.setFailed('Deployment failed, try again later.')
             break
           } else if (res.data.status == 'deployment_attempt_error') {
             // A temporary error happened, a retry will be scheduled automatically.
