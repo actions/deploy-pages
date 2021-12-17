@@ -95,6 +95,10 @@ class Deployment {
             // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
             core.setFailed('Deployment failed, try again later.')
             break
+          } else if(res.data.status == 'deployment_content_failed') {
+            // The uploaded artifact is invalid.
+            core.setFailed('Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.')
+            break
           } else if (res.data.status == 'deployment_attempt_error') {
             // A temporary error happened, a retry will be scheduled automatically.
             core.info(
