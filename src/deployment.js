@@ -126,6 +126,9 @@ class Deployment {
         }
       } catch (error) {
         core.setFailed(error)
+        if (error.response && error.response.data) {
+          core.info(error.response.data)
+        }
       }
     }
   }
