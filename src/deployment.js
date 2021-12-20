@@ -59,7 +59,7 @@ class Deployment {
       } catch (error) {
         core.info(`Failed to create deployment for ${this.buildVersion}.`)
         if (error.response && error.response.data) {
-          core.info(error.response.data)
+          console.log(error.response.data)
         }
         core.setFailed(error)
         throw error
@@ -130,7 +130,7 @@ class Deployment {
       } catch (error) {
         core.setFailed(error)
         if (error.response && error.response.data) {
-          core.info(error.response.data)
+          console.log(error.response.data)
         }
       }
     }
