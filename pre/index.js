@@ -7082,7 +7082,7 @@ class Deployment {
         })
         core.info(JSON.stringify(data))
         if (data.value.length == 0) {
-          throw new Error('No uploaded artifact was found!')
+          throw new Error('No uploaded artifact was found! Please check if there are any errors at build step.')
         }
         const artifactUrl = `${data.value[0].url}&%24expand=SignedContent`
         const payload = {
