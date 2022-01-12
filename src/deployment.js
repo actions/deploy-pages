@@ -38,7 +38,7 @@ class Deployment {
         })
         core.info(JSON.stringify(data))
         if (data.value.length == 0) {
-          throw new Error('No uploaded artifact was found!')
+          throw new Error('No uploaded artifact was found! Please check if there are any errors at build step.')
         }
         const artifactUrl = `${data.value[0].url}&%24expand=SignedContent`
         const payload = {
@@ -74,7 +74,7 @@ class Deployment {
         const statusUrl = this.deploymentInfo != null ?
           this.deploymentInfo["status_url"] :
           `https://api.github.com/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
-        core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo["page_url"] : "");
+        core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo["page_url"] : "")
         const timeout = core.getInput('timeout')
         const reportingInterval = core.getInput('reporting_interval')
         const maxErrorCount = core.getInput('error_count')
