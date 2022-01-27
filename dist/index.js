@@ -7136,7 +7136,6 @@ class Deployment {
 
         /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
         while (true) {
-
           // Handle reporting interval
           await new Promise(r => setTimeout(r, reportingInterval + errorReportingInterval))
 
