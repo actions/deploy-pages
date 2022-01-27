@@ -7050,6 +7050,12 @@ const axios = __nccwpck_require__(6545)
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(1319)
 
+const errorStatus = {
+  'unknown_status' : 'Unable to get deployment status.',
+  'not_found' :  'Deployment not found.',
+  'deployment_attempt_error' : 'Deployment temporarily failed, a retry will be automatically scheduled...'
+}
+
 class Deployment {
     constructor() {
       const context = getContext()
@@ -7120,17 +7126,19 @@ class Deployment {
           `https://api.github.com/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
         core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo["page_url"] : "")
         const timeout = core.getInput('timeout')
-        const reportingInterval = core.getInput('reporting_interval')
+        const reportingInterval = Number(core.getInput('reporting_interval'))
         const maxErrorCount = core.getInput('error_count')
         var startTime = Date.now()
         var errorCount = 0
 
+        // Time in milliseconds between two deployment status report when status errored, default 0.
+        var errorReportingInterval = 0
+
         /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
         while (true) {
+
           // Handle reporting interval
-          if (reportingInterval > 0) {
-            await new Promise(r => setTimeout(r, reportingInterval))
-          }
+          await new Promise(r => setTimeout(r, reportingInterval + errorReportingInterval))
 
           // Check status
           var res = await axios.get(statusUrl, {
@@ -7151,17 +7159,23 @@ class Deployment {
             // The uploaded artifact is invalid.
             core.setFailed('Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.')
             break
-          } else if (res.data.status == 'deployment_attempt_error') {
-            // A temporary error happened, a retry will be scheduled automatically.
-            core.info(
-              'Deployment temporarily failed, a retry will be automatically scheduled...'
-            )
+          } else if (errorStatus[res.data.status]) {
+            // A temporary error happened, will query the status again
+            core.info(errorStatus[res.data.status])
           } else {
             core.info('Current status: ' + res.data.status)
           }
 
-          if (res.status != 200) {
+          if (res.status != 200 || !!errorStatus[res.data.status]) {
             errorCount++
+
+            // set the Maximum error reporting interval greater than 15 sec but below 30 sec.
+            if (errorReportingInterval < 1000 * 15) {
+              errorReportingInterval = errorReportingInterval << 1 | 1
+            }
+          } else {
+            // reset the error reporting interval once get the proper status back.
+            errorReportingInterval = 0
           }
 
           if (errorCount >= maxErrorCount) {
@@ -7184,7 +7198,6 @@ class Deployment {
       }
     }
   }
-
   module.exports = {Deployment}
 
 /***/ }),
