@@ -52,4 +52,8 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main().then(() => require('./pre'))
+if (core.getInput('build_failed')) {
+  core.setFailed('Deployment skipped due to failed build.')
+} else {
+  main().then(() => require('./pre'))
+}

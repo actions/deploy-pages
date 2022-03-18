@@ -21,6 +21,10 @@ inputs:
     description: 'Time in milliseconds between two deployment status report (default: 1 second)'
     required: false
     default: "1000"
+  build_failed:
+    description: 'True if the previous build step failed'
+    required: false
+    default: false
 outputs:
   page_url:
     description: 'URL to deployed Github Pages'
