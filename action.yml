@@ -3,7 +3,6 @@ description: 'A GitHub Action to deploy an artifact to GitHub Pages'
 runs:
   using: 'node16'
   main: 'dist/index.js'
-  pre: 'pre/index.js'
 inputs:
   token:
     description: 'GitHub token'
