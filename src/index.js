@@ -52,4 +52,8 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main()
+if (core.getInput("emit_telemetry")) {
+  require('./pre')
+} else {
+  main()
+}

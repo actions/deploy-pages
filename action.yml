@@ -4,6 +4,10 @@ runs:
   using: 'node16'
   main: 'dist/index.js'
 inputs:
+  emit_telemetry:
+    description: 'Should this action emit build telemetry instead of deploy the build artifact'
+    default: false
+    required: false
   token:
     description: 'GitHub token'
     default: ${{ github.token }}
