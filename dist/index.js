@@ -7472,7 +7472,11 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main().then(() => __nccwpck_require__(9557))
+if (core.getInput("emit_telemetry")) {
+  __nccwpck_require__(9557)
+} else {
+  main()
+}
 
 })();
 
