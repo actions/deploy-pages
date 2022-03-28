@@ -7182,12 +7182,13 @@ class Deployment {
             core.setFailed('Failed with status code: ' + res.status)
             break
           }
-        }
-        // Handle timeout
-        if (Date.now() - startTime >= timeout) {
-          core.info('Timeout reached, aborting!')
-          core.setFailed('Timeout reached, aborting!')
-          return
+
+          // Handle timeout
+          if (Date.now() - startTime >= timeout) {
+            core.info('Timeout reached, aborting!')
+            core.setFailed('Timeout reached, aborting!')
+            return
+          }
         }
       } catch (error) {
         core.setFailed(error)
