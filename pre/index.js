@@ -7125,9 +7125,9 @@ class Deployment {
           this.deploymentInfo["status_url"] :
           `https://api.github.com/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
         core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo["page_url"] : "")
-        const timeout = core.getInput('timeout')
+        const timeout = Number(core.getInput('timeout'))
         const reportingInterval = Number(core.getInput('reporting_interval'))
-        const maxErrorCount = core.getInput('error_count')
+        const maxErrorCount = Number(core.getInput('error_count'))
         var startTime = Date.now()
         var errorCount = 0
 
@@ -7182,12 +7182,13 @@ class Deployment {
             core.setFailed('Failed with status code: ' + res.status)
             break
           }
-        }
-        // Handle timeout
-        if (Date.now() - startTime >= timeout) {
-          core.info('Timeout reached, aborting!')
-          core.setFailed('Timeout reached, aborting!')
-          return
+
+          // Handle timeout
+          if (Date.now() - startTime >= timeout) {
+            core.info('Timeout reached, aborting!')
+            core.setFailed('Timeout reached, aborting!')
+            return
+          }
         }
       } catch (error) {
         core.setFailed(error)
