@@ -53,8 +53,12 @@ process.on('SIGTERM', cancelHandler)
 
 // Main
 // Boolean inputs are stringified, but manually convert this input just in case that changes in the future.
-if (core.getInput("emit_telemetry").toString() === "true") {
+const emitTelemetry = core.getInput("emit_telemetry").toString();
+if (emitTelemetry === "true") {
   require('./pre')
-} else {
+} else if (emitTelemetry === "false") {
   main()
+} else {
+  // If emit_telemetry is not set, that indicates an older version of the dynamic workflow that doesn't separate telemetry from deployment
+  main().then(() => require('./pre'))
 }

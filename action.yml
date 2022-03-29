@@ -6,7 +6,6 @@ runs:
 inputs:
   emit_telemetry:
     description: 'Should this action emit build telemetry instead of deploy the build artifact'
-    default: false
     required: false
   token:
     description: 'GitHub token'
