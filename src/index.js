@@ -52,7 +52,8 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-if (core.getInput("emit_telemetry")) {
+// Boolean inputs are stringified, but manually convert this input just in case that changes in the future.
+if (core.getInput("emit_telemetry").toString() === "true") {
   require('./pre')
 } else {
   main()
