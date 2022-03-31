@@ -5,7 +5,7 @@ runs:
   main: 'dist/index.js'
 inputs:
   emit_telemetry:
-    description: 'Should this action emit build telemetry instead of deploy the build artifact'
+    description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
     required: false
   token:
     description: 'GitHub token'
