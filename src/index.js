@@ -52,4 +52,12 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main().then(() => require('./pre'))
+const emitTelemetry = core.getInput("emit_telemetry")
+if (emitTelemetry === "true") {
+  require('./pre')
+} else if (emitTelemetry === "false") {
+  main()
+} else {
+  // If emit_telemetry is not set, that indicates an older version of the dynamic workflow that doesn't separate telemetry from deployment
+  main().then(() => require('./pre'))
+}

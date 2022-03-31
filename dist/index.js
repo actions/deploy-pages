@@ -7473,7 +7473,15 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main().then(() => __nccwpck_require__(9557))
+const emitTelemetry = core.getInput("emit_telemetry")
+if (emitTelemetry === "true") {
+  __nccwpck_require__(9557)
+} else if (emitTelemetry === "false") {
+  main()
+} else {
+  // If emit_telemetry is not set, that indicates an older version of the dynamic workflow that doesn't separate telemetry from deployment
+  main().then(() => __nccwpck_require__(9557))
+}
 
 })();
 
