@@ -20,7 +20,7 @@ inputs:
     required: false
     default: "10"
   reporting_interval:
-    description: 'Time in milliseconds between two deployment status report (default: 1 second)'
+    description: 'Time in milliseconds between two deployment status report (default: 5 seconds)'
     required: false
     default: "5000"
 outputs:
