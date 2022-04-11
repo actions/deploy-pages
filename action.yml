@@ -25,4 +25,4 @@ inputs:
     default: "5000"
 outputs:
   page_url:
-    description: 'URL to deployed Github Pages'
+    description: 'URL to deployed GitHub Pages'
