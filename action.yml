@@ -7,6 +7,7 @@ inputs:
   emit_telemetry:
     description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
     required: false
+    default: "false"
   token:
     description: 'GitHub token'
     default: ${{ github.token }}
@@ -25,4 +26,4 @@ inputs:
     default: "5000"
 outputs:
   page_url:
-    description: 'URL to deployed Github Pages'
+    description: 'URL to deployed GitHub Pages'
