@@ -71,6 +71,12 @@ jobs:
 
 For more information about the other inputs available, take a look at the [action.yml file](https://github.com/actions/deploy-pages/blob/main/action.yml) in this repository.
 
+In order for dpeloys to work, you’ll need to:
+
+- set up an empty `gh-pages` branch
+- configure GitHub Pages to deploy from the `gh-pages` branch
+- go to Environments → `github-pages` in repository settings and change the “Deployment branches” setting to “Selected branches,” but don’t select any brnaches. The “All branches” setting won’t work.
+
 
 # License
 
