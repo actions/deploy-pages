@@ -7481,7 +7481,7 @@ async function cancelHandler(evtOrExitCodeOrError) {
         {
           headers: {
             Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            Authorization: `Bearer ${deployment.githubToken}`,
             'Content-type': 'application/json'
           }
         }
