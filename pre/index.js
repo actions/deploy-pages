@@ -7145,12 +7145,28 @@ class Deployment {
         core.info(JSON.stringify(response.data))
         this.deploymentInfo = response.data
       } catch (error) {
-        core.info(`Failed to create deployment for ${this.buildVersion}.`)
-        if (error.response && error.response.data) {
-          core.info(JSON.stringify(error.response.data))
+
+        // build customized error message based on server response
+        if (error.response) {
+
+          // output raw error in debug mode.
+          core.debug(error.response.data)
+          let errorMessage = `Failed to create deployment (status: ${error.response.status}) with build version ${this.buildVersion}. `
+          if (error.response.status == 400) {
+            errorMessage += `Responded with: ${error.response.data?.message}`
+          }
+          else if (error.response.status == 403) {
+            errorMessage += `Ensure GITHUB_TOKEN has permission "pages: write".`
+          } else if (error.response.status == 404) {
+            errorMessage += `Ensure GitHub Pages has been enabled.`
+          }
+          else if (error.response.status >= 500) {
+            errorMessage += `Pages server error, please re-run deployment later.`
+          }
+          throw errorMessage
+        } else {
+          throw error
         }
-        core.setFailed(error)
-        throw error
       }
     }
 
