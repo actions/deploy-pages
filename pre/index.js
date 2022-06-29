@@ -7145,6 +7145,7 @@ class Deployment {
         core.info(JSON.stringify(response.data))
         this.deploymentInfo = response.data
       } catch (error) {
+        core.error(error.stack)
 
         // build customized error message based on server response
         if (error.response) {
