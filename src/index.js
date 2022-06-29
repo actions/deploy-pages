@@ -32,14 +32,21 @@ async function cancelHandler(evtOrExitCodeOrError) {
       core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
     }
   } catch (e) {
-    console.info('Deployment cancellation failed', e)
+    console.log('Deployment cancellation failed', e)
   }
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 
 async function main() {
+  let idToken = ""
   try {
-    const idToken = await core.getIDToken()
+    idToken = await core.getIDToken()
+  } catch (error) {
+    console.log(error)
+    core.setFailed(`Ensure GITHUB_TOKEN has permission "idToken: write".`)
+    return
+  }
+  try {
     await deployment.create(idToken)
     await deployment.check()
   } catch (error) {
