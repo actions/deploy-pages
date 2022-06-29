@@ -42,7 +42,7 @@ async function main() {
   try {
     idToken = await core.getIDToken()
   } catch (error) {
-    core.info(error)
+    console.log(error)
     core.setFailed(`Ensure GITHUB_TOKEN has permission "idToken: write".`)
     return
   }
