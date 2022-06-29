@@ -7507,7 +7507,7 @@ async function cancelHandler(evtOrExitCodeOrError) {
       core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
     }
   } catch (e) {
-    core.info('Deployment cancellation failed', e)
+    console.log('Deployment cancellation failed', e)
   }
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
