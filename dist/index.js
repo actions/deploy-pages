@@ -7513,12 +7513,18 @@ async function cancelHandler(evtOrExitCodeOrError) {
 }
 
 async function main() {
+  let idToken = ""
   try {
-    const idToken = await core.getIDToken()
+    idToken = await core.getIDToken()
+  } catch (error) {
+    console.log(error)
+    console.log(JSON.stringify(error))
+    return
+  }
+  try {
     await deployment.create(idToken)
     await deployment.check()
   } catch (error) {
-
     core.setFailed(error)
   }
 }
