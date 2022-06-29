@@ -91,7 +91,7 @@ class Deployment {
             errorMessage += `Ensure GitHub Pages has been enabled.`
           }
           else if (error.response.status >= 500) {
-            errorMessage += `Pages server error, please re-run deployment later.`
+            errorMessage += `Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
           }
           throw errorMessage
         } else {
