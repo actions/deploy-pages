@@ -56,7 +56,7 @@ There are a few important considerations to be aware of:
    - `pages: write`
    - `id-token: write`
 
-3. The deployment must target a `github-pages` environment (you may use a different environment name but we don't recommend it)
+3. The deployment should target the `github-pages` environment (you may use a different environment name if needed, but this is not recommended.)
 
 4. If your Pages site is using a source branch, the deployment must originate from this source branch unless [your environment is protected][environment-protection] in which case the environment protection rules take precedence over the source branch rule
 
