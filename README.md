@@ -10,7 +10,7 @@ This action is used to deploy [Actions artifacts][artifacts] to GitHub Pages.
 
 See [action.yml](action.yml) for the various `inputs` this action supports.
 
-To see real workflows making use of this action, see the [Pages starter-workflows][starter-workflows] that we publish.
+For examples that make use of this action, check out our [starter-workflows][starter-workflows] in a variety of frameworks.
 
 This action expects an artifact to have been uploaded from the same workflow using [`actions/upload-pages-artifact`][upload-pages-artifact].
 
