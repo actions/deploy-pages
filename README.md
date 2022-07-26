@@ -12,7 +12,7 @@ See [action.yml](action.yml) for the various `inputs` this action supports.
 
 For examples that make use of this action, check out our [starter-workflows][starter-workflows] in a variety of frameworks.
 
-This action expects an artifact to have been uploaded from the same workflow using [`actions/upload-pages-artifact`][upload-pages-artifact].
+This action expects an artifact named `github-pages` to have been created prior to execution. This is done automatically using [`actions/upload-pages-artifact`][upload-pages-artifact].
 
 We recommend this action to be used in a dedicated job:
 
