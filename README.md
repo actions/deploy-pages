@@ -50,7 +50,7 @@ jobs:
 
 There are a few important considerations to be aware of:
 
-1. The artifact being deployed must have been uploaded in the same workflow (it can originates from a different job though)
+1. The artifact being deployed must have been uploaded in a previous step, either in the same job or a separate job that doesn't execute until the upload is complete.
 
 2. The deployment step must at minimum have the following permissions:
    - `pages: write`
