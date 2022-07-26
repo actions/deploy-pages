@@ -46,7 +46,7 @@ jobs:
         uses: actions/deploy-pages@v1
 ```
 
-# Security considerations
+## Security considerations
 
 There are a few important considerations to be aware of:
 
