@@ -12,7 +12,6 @@ function getRequiredVars() {
     actionsId: process.env.GITHUB_ACTION,
     githubApiUrl: process.env.GITHUB_API_URL ?? `https://api.github.com`,
     githubToken: core.getInput('token'),
-    artifactName: core.getInput('artifact_name'),
   }
 }
 

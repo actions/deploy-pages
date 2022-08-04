@@ -7059,7 +7059,6 @@ function getRequiredVars() {
     actionsId: process.env.GITHUB_ACTION,
     githubApiUrl: process.env.GITHUB_API_URL ?? `https://api.github.com`,
     githubToken: core.getInput('token'),
-    artifactName: core.getInput('artifact_name'),
   }
 }
 
@@ -7108,7 +7107,7 @@ class Deployment {
       this.requestedDeployment = false
       this.deploymentInfo = null
       this.githubApiUrl = context.githubApiUrl
-      this.artifactName = context.artifactName
+      this.artifactName = core.getInput('artifact_name')
     }
 
     // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages

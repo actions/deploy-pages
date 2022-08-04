@@ -20,18 +20,9 @@ describe('with all environment variables set', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
-    jest.spyOn(core, 'getInput').mockImplementation(param => {
-      switch (param) {
-        case 'artifact_name':
-          return 'github-pages'
-        case 'token':
-          return process.env.GITHUB_TOKEN
-      }
-    })
-    jest.setTimeout(10 * 1000)
   })
 
-  it('Executes cleanly', done => {
+  it.only('Executes cleanly', done => {
     const ip = path.join(__dirname, './index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
       expect(stdout).toMatch(/::debug::all variables are set/)
