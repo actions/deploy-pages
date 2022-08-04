@@ -20,7 +20,14 @@ describe('with all environment variables set', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
-    process.env.ARTIFACT_NAME = 'github-pages'
+    jest.spyOn(core, 'getInput').mockImplementation(param => {
+      switch (param) {
+        case 'artifact_name':
+          return 'github-pages'
+        case 'token':
+          return process.env.GITHUB_TOKEN
+      }
+    })
   })
 
   it('Executes cleanly', done => {
