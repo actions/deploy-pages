@@ -21,7 +21,7 @@ const {Deployment} = require('./deployment')
 async function emitTelemetry() {
   // All variables we need from the runtime are set in the Deployment constructor
   const deployment = new Deployment()
-  const telemetryUrl = `https://api.github.com/repos/${deployment.repositoryNwo}/pages/telemetry`
+  const telemetryUrl = `${deployment.githubApiUrl}/repos/${deployment.repositoryNwo}/pages/telemetry`
   core.info(`Sending telemetry for run id ${deployment.workflowRun}`)
   await axios
     .post(
