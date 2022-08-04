@@ -25,6 +25,8 @@ describe('with all environment variables set', () => {
   it.only('Executes cleanly', done => {
     const ip = path.join(__dirname, './index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
+      console.log(err)
+      console.log(stdout)
       expect(stdout).toMatch(/::debug::all variables are set/)
       done()
     })
