@@ -20,7 +20,6 @@ module.exports = function getContext() {
   const requiredVars = getRequiredVars()
   for (const variable in requiredVars) {
     if (requiredVars[variable] === undefined) {
-      console.log(`${variable} is undefined. Cannot continue.`)
       throw new Error(`${variable} is undefined. Cannot continue.`)
     }
   }

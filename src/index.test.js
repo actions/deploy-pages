@@ -28,6 +28,7 @@ describe('with all environment variables set', () => {
           return process.env.GITHUB_TOKEN
       }
     })
+    jest.setTimeout(10 * 1000)
   })
 
   it('Executes cleanly', done => {
