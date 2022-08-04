@@ -20,12 +20,15 @@ describe('with all environment variables set', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
+    core.getIDToken = jest.fn().mockResolvedValue("")
   })
 
   it.only('Executes cleanly', done => {
     const ip = path.join(__dirname, './index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
+      console.log("************")
       console.log(err)
+      console.log("************")
       console.log(stdout)
       expect(stdout).toMatch(/::debug::all variables are set/)
       done()
