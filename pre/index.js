@@ -7057,7 +7057,6 @@ function getRequiredVars() {
     buildVersion: process.env.GITHUB_SHA,
     buildActor: process.env.GITHUB_ACTOR,
     actionsId: process.env.GITHUB_ACTION,
-    githubApiUrl: process.env.GITHUB_API_URL ?? `https://api.github.com`,
     githubToken: core.getInput('token'),
   }
 }
@@ -7106,7 +7105,7 @@ class Deployment {
       this.workflowRun = context.workflowRun
       this.requestedDeployment = false
       this.deploymentInfo = null
-      this.githubApiUrl = context.githubApiUrl
+      this.githubApiUrl = process.env.GITHUB_API_URL ? process.env.GITHUB_API_URL : "https://api.github.com",
       this.artifactName = core.getInput('artifact_name')
     }
 
