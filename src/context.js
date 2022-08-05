@@ -10,7 +10,9 @@ function getRequiredVars() {
     buildVersion: process.env.GITHUB_SHA,
     buildActor: process.env.GITHUB_ACTOR,
     actionsId: process.env.GITHUB_ACTION,
-    githubToken: core.getInput('token')
+    githubToken: core.getInput('token'),
+    githubApiUrl: process.env.GITHUB_API_URL ?? 'https://api.github.com',
+    artifactName: core.getInput('artifact_name') ?? 'github-pages'
   }
 }
 

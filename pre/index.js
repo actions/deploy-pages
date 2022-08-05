@@ -7057,7 +7057,9 @@ function getRequiredVars() {
     buildVersion: process.env.GITHUB_SHA,
     buildActor: process.env.GITHUB_ACTOR,
     actionsId: process.env.GITHUB_ACTION,
-    githubToken: core.getInput('token')
+    githubToken: core.getInput('token'),
+    githubApiUrl: process.env.GITHUB_API_URL ?? 'https://api.github.com',
+    artifactName: core.getInput('artifact_name') ?? 'github-pages'
   }
 }
 
@@ -7105,6 +7107,8 @@ class Deployment {
       this.workflowRun = context.workflowRun
       this.requestedDeployment = false
       this.deploymentInfo = null
+      this.githubApiUrl = context.githubApiUrl
+      this.artifactName = context.artifactName
     }
 
     // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
@@ -7113,7 +7117,7 @@ class Deployment {
       try {
         core.info(`Actor: ${this.buildActor}`)
         core.info(`Action ID: ${this.actionsId}`)
-        const pagesDeployEndpoint = `https://api.github.com/repos/${this.repositoryNwo}/pages/deployment`
+        const pagesDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment`
         const artifactExgUrl = `${this.runTimeUrl}_apis/pipelines/workflows/${this.workflowRun}/artifacts?api-version=6.0-preview`
         core.info(`Artifact URL: ${artifactExgUrl}`)
         const {data} = await axios.get(artifactExgUrl, {
@@ -7123,10 +7127,12 @@ class Deployment {
           }
         })
         core.info(JSON.stringify(data))
-        if (data.value.length == 0) {
-          throw new Error('No uploaded artifact was found! Please check if there are any errors at build step.')
+        const artifactRawUrl = data?.value?.find(artifact => artifact.name === this.artifactName)?.url
+        if (!artifactRawUrl) {
+            throw new Error('No uploaded artifact was found! Please check if there are any errors at build step, or uploaded artifact name is correct.')
         }
-        const artifactUrl = `${data.value[0].url}&%24expand=SignedContent`
+
+        const artifactUrl = `${artifactRawUrl}&%24expand=SignedContent`
         const payload = {
           artifact_url: artifactUrl,
           pages_build_version: this.buildVersion,
@@ -7185,7 +7191,7 @@ class Deployment {
       try {
         const statusUrl = this.deploymentInfo != null ?
           this.deploymentInfo["status_url"] :
-          `https://api.github.com/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
+          `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
         core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo["page_url"] : "")
         const timeout = Number(core.getInput('timeout'))
         const reportingInterval = Number(core.getInput('reporting_interval'))
@@ -7290,7 +7296,7 @@ const {Deployment} = __nccwpck_require__(2877)
 async function emitTelemetry() {
   // All variables we need from the runtime are set in the Deployment constructor
   const deployment = new Deployment()
-  const telemetryUrl = `https://api.github.com/repos/${deployment.repositoryNwo}/pages/telemetry`
+  const telemetryUrl = `${deployment.githubApiUrl}/repos/${deployment.repositoryNwo}/pages/telemetry`
   core.info(`Sending telemetry for run id ${deployment.workflowRun}`)
   await axios
     .post(
