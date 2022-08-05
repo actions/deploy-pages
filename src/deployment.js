@@ -25,8 +25,8 @@ class Deployment {
       this.workflowRun = context.workflowRun
       this.requestedDeployment = false
       this.deploymentInfo = null
-      this.githubApiUrl = process.env.GITHUB_API_URL ? process.env.GITHUB_API_URL : "https://api.github.com",
-      this.artifactName = core.getInput('artifact_name')
+      this.githubApiUrl = context.githubApiUrl
+      this.artifactName = context.artifactName
     }
 
     // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
