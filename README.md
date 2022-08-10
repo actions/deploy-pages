@@ -1,4 +1,4 @@
-# Deploy-Pages
+# deploy-pages
 
 This action is used to deploy [Actions artifacts][artifacts] to GitHub Pages.
 
