@@ -1,5 +1,6 @@
-name: 'Deploy to GitHub Pages'
+name: 'GitHub Pages Deployment'
 description: 'A GitHub Action to deploy an artifact to GitHub Pages'
+author: 'GitHub'
 runs:
   using: 'node16'
   main: 'dist/index.js'
