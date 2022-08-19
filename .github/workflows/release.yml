@@ -1,0 +1,30 @@
+name: Release
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      TAG_NAME:
+        description: "Tag name that the major tag will point to"
+        required: true
+
+env:
+  TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+
+permissions:
+  contents: write
+
+jobs:
+  update_tag:
+    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
+    runs-on: ubuntu-latest
+    environment:
+      # Note: this environment is protected
+      name: Release
+    steps:
+      - name: Update the ${{ env.TAG_NAME }} tag
+        id: update-major-tag
+        uses: actions/publish-action@v0.1.0
+        with:
+          source-tag: ${{ env.TAG_NAME }}
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
