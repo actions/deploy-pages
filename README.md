@@ -62,6 +62,16 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we do it by default for you)
 
+# Release instructions
+
+In order to release a new version of this Action:
+
+1. Publish the draft release from the `main` branch with semantic version as the tag name, _with_ the checkbox to publish to the GitHub Marketplace checked. :ballot_box_with_check:
+
+2. After publishing the release, the [`release` workflow][release] will automatically run to create/update the corresponding the major version tag such as `v0`.
+
+   ⚠️ Environment approval is required. Check the [Release workflow run list][release-workflow-runs].
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).
@@ -71,3 +81,4 @@ The scripts and documentation in this project are released under the [MIT Licens
 [upload-pages-artifact]: https://github.com/actions/upload-pages-artifact
 [artifacts]: https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
 [environment-protection]: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#environment-protection-rules
+[release-workflow-runs]: https://github.com/actions/deploy-pages/actions/workflows/release.yml
