@@ -8,7 +8,7 @@ const core = require('@actions/core')
 // const github = require('@actions/github'); // TODO: Not used until we publish API endpoint to the @action/github package
 const axios = require('axios')
 
-const {Deployment} = require('./deployment')
+const { Deployment } = require('./deployment')
 const deployment = new Deployment()
 
 // TODO: If the artifact hasn't been created, we can create it and upload to artifact storage ourselves
@@ -38,7 +38,7 @@ async function cancelHandler(evtOrExitCodeOrError) {
 }
 
 async function main() {
-  let idToken = ""
+  let idToken = ''
   try {
     idToken = await core.getIDToken()
   } catch (error) {
@@ -59,8 +59,8 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-const emitTelemetry = core.getInput("emit_telemetry")
-if (emitTelemetry === "true") {
+const emitTelemetry = core.getInput('emit_telemetry')
+if (emitTelemetry === 'true') {
   require('./pre')
 } else {
   main()
