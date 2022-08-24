@@ -8309,7 +8309,7 @@ class Deployment {
       const statusUrl =
         this.deploymentInfo != null
           ? this.deploymentInfo['status_url']
-          : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
+          : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
       core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo['page_url'] : '')
       const timeout = Number(core.getInput('timeout'))
       const reportingInterval = Number(core.getInput('reporting_interval'))
@@ -8368,16 +8368,51 @@ class Deployment {
         if (errorCount >= maxErrorCount) {
           core.info('Too many errors, aborting!')
           core.setFailed('Failed with status code: ' + res.status)
-          break
+
+          // Explicitly cancel the deployment
+          await this.cancel()
+          return
         }
 
         // Handle timeout
         if (Date.now() - startTime >= timeout) {
           core.info('Timeout reached, aborting!')
           core.setFailed('Timeout reached, aborting!')
+
+          // Explicitly cancel the deployment
+          await this.cancel()
           return
         }
       }
+    } catch (error) {
+      core.setFailed(error)
+      if (error.response && error.response.data) {
+        core.info(JSON.stringify(error.response.data))
+      }
+    }
+  }
+
+  async cancel() {
+    // Don't attemp to cancel if no deployment was created
+    if (!this.requestedDeployment) {
+      return
+    }
+
+    // Cancel the deployment
+    try {
+      const pagesCancelDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/cancel/${this.buildVersion}`
+      await axios.put(
+        pagesCancelDeployEndpoint,
+        {},
+        {
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `Bearer ${this.githubToken}`,
+            'Content-type': 'application/json'
+          }
+        }
+      )
+      core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
     } catch (error) {
       core.setFailed(error)
       if (error.response && error.response.data) {
@@ -8624,34 +8659,12 @@ __nccwpck_require__(4307)
 
 const core = __nccwpck_require__(2186)
 // const github = require('@actions/github'); // TODO: Not used until we publish API endpoint to the @action/github package
-const axios = __nccwpck_require__(6545)
 
 const { Deployment } = __nccwpck_require__(2877)
 const deployment = new Deployment()
 
-// TODO: If the artifact hasn't been created, we can create it and upload to artifact storage ourselves
-// const tar = require('tar')
-
 async function cancelHandler(evtOrExitCodeOrError) {
-  try {
-    if (deployment.requestedDeployment) {
-      const pagesCancelDeployEndpoint = `${deployment.githubApiUrl}/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/cancel/${process.env.GITHUB_SHA}`
-      await axios.put(
-        pagesCancelDeployEndpoint,
-        {},
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${deployment.githubToken}`,
-            'Content-type': 'application/json'
-          }
-        }
-      )
-      core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
-    }
-  } catch (e) {
-    console.log('Deployment cancellation failed', e)
-  }
+  await deployment.cancel()
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 

@@ -6,34 +6,12 @@ require('regenerator-runtime/runtime')
 
 const core = require('@actions/core')
 // const github = require('@actions/github'); // TODO: Not used until we publish API endpoint to the @action/github package
-const axios = require('axios')
 
 const { Deployment } = require('./deployment')
 const deployment = new Deployment()
 
-// TODO: If the artifact hasn't been created, we can create it and upload to artifact storage ourselves
-// const tar = require('tar')
-
 async function cancelHandler(evtOrExitCodeOrError) {
-  try {
-    if (deployment.requestedDeployment) {
-      const pagesCancelDeployEndpoint = `${deployment.githubApiUrl}/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/cancel/${process.env.GITHUB_SHA}`
-      await axios.put(
-        pagesCancelDeployEndpoint,
-        {},
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${deployment.githubToken}`,
-            'Content-type': 'application/json'
-          }
-        }
-      )
-      core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
-    }
-  } catch (e) {
-    console.log('Deployment cancellation failed', e)
-  }
+  await deployment.cancel()
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 
