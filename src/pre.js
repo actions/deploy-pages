@@ -16,7 +16,7 @@ axiosRetry(axios, {
   }
 })
 
-const {Deployment} = require('./deployment')
+const { Deployment } = require('./deployment')
 
 async function emitTelemetry() {
   // All variables we need from the runtime are set in the Deployment constructor
@@ -26,7 +26,7 @@ async function emitTelemetry() {
   await axios
     .post(
       telemetryUrl,
-      {github_run_id: deployment.workflowRun},
+      { github_run_id: deployment.workflowRun },
       {
         headers: {
           Accept: 'application/vnd.github.v3+json',
@@ -54,4 +54,4 @@ async function main() {
 
 main()
 
-module.exports = {emitTelemetry}
+module.exports = { emitTelemetry }
