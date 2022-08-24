@@ -109,7 +109,7 @@ class Deployment {
       const statusUrl =
         this.deploymentInfo != null
           ? this.deploymentInfo['status_url']
-          : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${process.env['GITHUB_SHA']}`
+          : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
       core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo['page_url'] : '')
       const timeout = Number(core.getInput('timeout'))
       const reportingInterval = Number(core.getInput('reporting_interval'))
@@ -168,16 +168,51 @@ class Deployment {
         if (errorCount >= maxErrorCount) {
           core.info('Too many errors, aborting!')
           core.setFailed('Failed with status code: ' + res.status)
-          break
+
+          // Explicitly cancel the deployment
+          await this.cancel()
+          return
         }
 
         // Handle timeout
         if (Date.now() - startTime >= timeout) {
           core.info('Timeout reached, aborting!')
           core.setFailed('Timeout reached, aborting!')
+
+          // Explicitly cancel the deployment
+          await this.cancel()
           return
         }
       }
+    } catch (error) {
+      core.setFailed(error)
+      if (error.response && error.response.data) {
+        core.info(JSON.stringify(error.response.data))
+      }
+    }
+  }
+
+  async cancel() {
+    // Don't attemp to cancel if no deployment was created
+    if (!this.requestedDeployment) {
+      return
+    }
+
+    // Cancel the deployment
+    try {
+      const pagesCancelDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/cancel/${this.buildVersion}`
+      await axios.put(
+        pagesCancelDeployEndpoint,
+        {},
+        {
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `Bearer ${this.githubToken}`,
+            'Content-type': 'application/json'
+          }
+        }
+      )
+      core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
     } catch (error) {
       core.setFailed(error)
       if (error.response && error.response.data) {
