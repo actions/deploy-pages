@@ -68,7 +68,7 @@ In order to release a new version of this Action:
 
 1. Publish the draft release from the `main` branch with semantic version as the tag name, _with_ the checkbox to publish to the GitHub Marketplace checked. :ballot_box_with_check:
 
-2. After publishing the release, the [`release` workflow][release] will automatically run to create/update the corresponding the major version tag such as `v0`.
+2. After publishing the release, the [`release` workflow][release] will automatically run to create/update the corresponding the major version tag such as `v1`.
 
    ⚠️ Environment approval is required. Check the [Release workflow run list][release-workflow-runs].
 
