@@ -81,4 +81,5 @@ The scripts and documentation in this project are released under the [MIT Licens
 [upload-pages-artifact]: https://github.com/actions/upload-pages-artifact
 [artifacts]: https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
 [environment-protection]: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#environment-protection-rules
+[release]: .github/workflows/release.yml
 [release-workflow-runs]: https://github.com/actions/deploy-pages/actions/workflows/release.yml
