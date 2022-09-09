@@ -27,6 +27,7 @@ class Deployment {
     this.deploymentInfo = null
     this.githubApiUrl = context.githubApiUrl
     this.artifactName = context.artifactName
+    this.isPreview = context.isPreview === true
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
@@ -57,6 +58,9 @@ class Deployment {
         artifact_url: artifactUrl,
         pages_build_version: this.buildVersion,
         oidc_token: idToken
+      }
+      if (this.isPreview === true) {
+        payload.preview = true
       }
       core.info(`Creating deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
       const response = await axios.post(pagesDeployEndpoint, payload, {
@@ -110,7 +114,12 @@ class Deployment {
         this.deploymentInfo != null
           ? this.deploymentInfo['status_url']
           : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
-      core.setOutput('page_url', this.deploymentInfo != null ? this.deploymentInfo['page_url'] : '')
+      let pageUrl = this.deploymentInfo != null ? this.deploymentInfo["page_url"] : ""
+      const previewUrl = this.deploymentInfo != null ? this.deploymentInfo["preview_url"] : ""
+      if (this.isPreview && previewUrl) {
+        pageUrl = previewUrl
+      }
+      core.setOutput('page_url', pageUrl)
       const timeout = Number(core.getInput('timeout'))
       const reportingInterval = Number(core.getInput('reporting_interval'))
       const maxErrorCount = Number(core.getInput('error_count'))
