@@ -11,7 +11,7 @@ describe('emitTelemetry', () => {
     process.env.ACTIONS_RUNTIME_URL = 'my-url'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
-    process.env.GITHUB_REPOSITORY = 'paper-spa/is-awesome'
+    process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
     process.env.GITHUB_ACTOR = 'monalisa'
@@ -45,7 +45,7 @@ describe('emitTelemetry', () => {
     emitTelemetry()
 
     expect(axios.post).toBeCalledWith(
-      'https://api.github.com/repos/paper-spa/is-awesome/pages/telemetry',
+      'https://api.github.com/repos/actions/is-awesome/pages/telemetry',
       {
         github_run_id: process.env.GITHUB_RUN_ID
       },

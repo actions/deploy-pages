@@ -14,7 +14,7 @@ describe('with all environment variables set', () => {
     process.env.ACTIONS_RUNTIME_URL = 'my-url'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
-    process.env.GITHUB_REPOSITORY = 'paper-spa/is-awesome'
+    process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
     process.env.GITHUB_ACTOR = 'monalisa'
@@ -49,7 +49,7 @@ describe('create', () => {
     process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
-    process.env.GITHUB_REPOSITORY = 'paper-spa/is-awesome'
+    process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
     process.env.GITHUB_ACTOR = 'monalisa'
@@ -99,7 +99,7 @@ describe('create', () => {
     await deployment.create(fakeJwt)
 
     expect(axios.post).toBeCalledWith(
-      'https://api.github.com/repos/paper-spa/is-awesome/pages/deployment',
+      'https://api.github.com/repos/actions/is-awesome/pages/deployment',
       {
         artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
         pages_build_version: 'valid-build-version',
@@ -136,7 +136,7 @@ describe('create', () => {
       deployment.create()
     } catch (err) {
       expect(axios.post).toBeCalledWith(
-        'https://api.github.com/repos/paper-spa/is-awesome/pages/deployment',
+        'https://api.github.com/repos/actions/is-awesome/pages/deployment',
         {
           artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
           pages_build_version: 'invalid-build-version'
@@ -163,7 +163,7 @@ describe('check', () => {
     process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
-    process.env.GITHUB_REPOSITORY = 'paper-spa/is-awesome'
+    process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
     process.env.GITHUB_ACTOR = 'monalisa'
