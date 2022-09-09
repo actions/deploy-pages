@@ -8317,8 +8317,8 @@ class Deployment {
         this.deploymentInfo != null
           ? this.deploymentInfo['status_url']
           : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
-      let pageUrl = this.deploymentInfo != null ? this.deploymentInfo["page_url"] : ""
-      const previewUrl = this.deploymentInfo != null ? this.deploymentInfo["preview_url"] : ""
+      let pageUrl = this.deploymentInfo != null ? this.deploymentInfo['page_url'] : ''
+      const previewUrl = this.deploymentInfo != null ? this.deploymentInfo['preview_url'] : ''
       if (this.isPreview && previewUrl) {
         pageUrl = previewUrl
       }
