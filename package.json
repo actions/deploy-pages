@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paper-spa/deploy-pages.git"
+    "url": "git+https://github.com/actions/deploy-pages.git"
   },
   "keywords": [
     "GitHub",
@@ -42,7 +42,7 @@
   "author": "GitHub",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/paper-spa/deploy-pages/issues"
+    "url": "https://github.com/actions/deploy-pages/issues"
   },
-  "homepage": "https://github.com/paper-spa/deploy-pages#readme"
+  "homepage": "https://github.com/actions/deploy-pages#readme"
 }
