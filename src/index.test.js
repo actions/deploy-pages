@@ -151,7 +151,7 @@ describe('create', () => {
     await deployment.create(fakeJwt)
 
     expect(axios.post).toBeCalledWith(
-      'https://api.github.com/repos/paper-spa/is-awesome/pages/deployment',
+      'https://api.github.com/repos/actions/is-awesome/pages/deployment',
       {
         artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
         pages_build_version: 'valid-build-version',
