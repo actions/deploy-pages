@@ -220,8 +220,6 @@ exports.addPath = addPath;
  */
 function getInput(name, options) {
     const val = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
-    process.stdout.write(`@actions/core getInput(${JSON.stringify(name)}): ${JSON.stringify(val)}\n`)
-    process.stdout.write(`process.env = ${JSON.stringify(process.env)}\n`)
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
