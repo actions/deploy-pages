@@ -29,6 +29,10 @@ inputs:
     description: 'Name of the artifact to deploy'
     required: false
     default: "github-pages"
+  preview:
+    description: 'Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!)'
+    required: false
+    default: 'false'
 outputs:
   page_url:
     description: 'URL to deployed GitHub Pages'
