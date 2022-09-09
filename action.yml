@@ -8,7 +8,7 @@ inputs:
   emit_telemetry:
     description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
     required: false
-    default: "false"
+    default: 'false'
   token:
     description: 'GitHub token'
     default: ${{ github.token }}
@@ -16,19 +16,19 @@ inputs:
   timeout:
     description: 'Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)'
     required: false
-    default: "600000"
+    default: '600000'
   error_count:
     description: 'Maximum number of status report errors before cancelling a deployment (default: 10)'
     required: false
-    default: "10"
+    default: '10'
   reporting_interval:
     description: 'Time in milliseconds between two deployment status report (default: 5 seconds)'
     required: false
-    default: "5000"
+    default: '5000'
   artifact_name:
     description: 'Name of the artifact to deploy'
     required: false
-    default: "github-pages"
+    default: 'github-pages'
   preview:
     description: 'Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!)'
     required: false
