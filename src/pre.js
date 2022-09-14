@@ -22,11 +22,12 @@ async function emitTelemetry() {
   // All variables we need from the runtime are set in the Deployment constructor
   const deployment = new Deployment()
   const telemetryUrl = `${deployment.githubApiUrl}/repos/${deployment.repositoryNwo}/pages/telemetry`
-  core.info(`Sending telemetry for run id ${deployment.workflowRun}`)
+  const conclusion = core.getInput('conclusion') || null
+  core.info(`Sending telemetry for run id ${deployment.workflowRun}: ${conclusion}`)
   await axios
     .post(
       telemetryUrl,
-      { github_run_id: deployment.workflowRun },
+      { github_run_id: deployment.workflowRun, conclusion },
       {
         headers: {
           Accept: 'application/vnd.github.v3+json',
