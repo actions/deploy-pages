@@ -17,6 +17,7 @@ describe('emitTelemetry', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
+    process.env.INPUT_CONCLUSION = 'success'
 
     jest.spyOn(core, 'setOutput').mockImplementation(param => {
       return param
@@ -47,7 +48,8 @@ describe('emitTelemetry', () => {
     expect(axios.post).toBeCalledWith(
       'https://api.github.com/repos/actions/is-awesome/pages/telemetry',
       {
-        github_run_id: process.env.GITHUB_RUN_ID
+        github_run_id: process.env.GITHUB_RUN_ID,
+        conclusion: 'success'
       },
       {
         headers: {

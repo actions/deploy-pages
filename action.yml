@@ -9,6 +9,9 @@ inputs:
     description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
     required: false
     default: 'false'
+  conclusion:
+    description: 'The status of the previous build.'
+    required: false
   token:
     description: 'GitHub token'
     default: ${{ github.token }}
