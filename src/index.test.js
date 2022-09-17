@@ -5,8 +5,6 @@ const path = require('path')
 const nock = require('nock')
 const axios = require('axios')
 
-const { expect, jest } = require('@jest/globals')
-
 const { Deployment } = require('./deployment')
 
 describe('with all environment variables set', () => {
