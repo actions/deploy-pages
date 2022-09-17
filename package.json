@@ -27,8 +27,8 @@
     "lint": "eslint src",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt && ncc build src/pre.js -o pre --source-map --license licenses.txt",
     "test": "jest",
-    "format": "prettier --write 'src/**/*.js'",
-    "format:check": "prettier --check 'src/**/*.js'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "all": "npm run format && npm run lint && npm run prepare && npm run test"
   },
   "repository": {
