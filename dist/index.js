@@ -8199,8 +8199,6 @@ module.exports = function getContext() {
 /***/ 2877:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-__nccwpck_require__(4307)
-
 const core = __nccwpck_require__(2186)
 const axios = __nccwpck_require__(6545)
 
@@ -8662,8 +8660,6 @@ module.exports = require("zlib");
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-__nccwpck_require__(4307)
-
 // This package assumes a site has already been built and the files exist in the current workspace
 // If there's an artifact named `artifact.tar`, it can upload that to actions on its own,
 // without the user having to do the tar process themselves.
