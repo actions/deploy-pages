@@ -1,5 +1,3 @@
-require('regenerator-runtime/runtime')
-
 const core = require('@actions/core')
 const axios = require('axios')
 
