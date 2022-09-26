@@ -66,9 +66,11 @@ There are a few important considerations to be aware of:
 
 In order to release a new version of this Action:
 
-1. Publish the draft release from the `main` branch with semantic version as the tag name, _with_ the checkbox to publish to the GitHub Marketplace checked. :ballot_box_with_check:
+1. Locate the semantic version of the [upcoming release][release-list] (a draft is maintained by the [`draft-release` workflow][draft-release]).
 
-2. After publishing the release, the [`release` workflow][release] will automatically run to create/update the corresponding the major version tag such as `v1`.
+2. Publish the draft release from the `main` branch with semantic version as the tag name, _with_ the checkbox to publish to the GitHub Marketplace checked. :ballot_box_with_check:
+
+3. After publishing the release, the [`release` workflow][release] will automatically run to create/update the corresponding the major version tag such as `v1`.
 
    ⚠️ Environment approval is required. Check the [Release workflow run list][release-workflow-runs].
 
@@ -81,5 +83,7 @@ The scripts and documentation in this project are released under the [MIT Licens
 [upload-pages-artifact]: https://github.com/actions/upload-pages-artifact
 [artifacts]: https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
 [environment-protection]: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#environment-protection-rules
+[release-list]: https://github.com/actions/deploy-pages/releases
+[draft-release]: .github/workflows/draft-release.yml
 [release]: .github/workflows/release.yml
 [release-workflow-runs]: https://github.com/actions/deploy-pages/actions/workflows/release.yml
