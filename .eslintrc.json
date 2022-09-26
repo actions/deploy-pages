@@ -1,19 +1,17 @@
 {
   "env": {
     "commonjs": true,
-    "es6": true,
-    "jest": true,
-    "node": true
+    "es2021": true,
+    "node": true,
+    "jest": true
   },
-  "extends": "eslint:recommended",
-  "globals": {
-    "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly"
-  },
+  "plugins": ["github"],
+  "extends": ["eslint:recommended", "prettier", "plugin:github/internal"],
   "parserOptions": {
-    "ecmaVersion": 2020
+    "ecmaVersion": 12
   },
   "rules": {
     "semi": ["error", "never"]
-  }
+  },
+  "ignorePatterns": ["/dist/", "/pre/"]
 }

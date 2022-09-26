@@ -1,4 +1,4 @@
-name: Checking linter
+name: Check linter
 
 on:
   push:
@@ -31,4 +31,4 @@ jobs:
         run: npm ci
 
       - name: Verify linter
-        run: npm run lint
+        run: npm run lint:check

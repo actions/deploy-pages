@@ -10,7 +10,6 @@
     "regenerator-runtime": "^0.13.9"
   },
   "devDependencies": {
-    "@github/prettier-config": "0.0.4",
     "@vercel/ncc": "^0.31.1",
     "eslint": "^8.2.0",
     "eslint-config-prettier": "^8.3.0",
@@ -20,12 +19,13 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
-    "lint": "eslint src",
+    "all": "npm run format && npm run lint && npm run prepare && npm run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "DEBUG=eslint:cli-engine eslint --fix .",
+    "lint:check": "DEBUG=eslint:cli-engine eslint .",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt && ncc build src/pre.js -o pre --source-map --license licenses.txt",
-    "test": "jest",
-    "format": "prettier --write 'src/**/*.js'",
-    "format:check": "prettier --check 'src/**/*.js'",
-    "all": "npm run format && npm run lint && npm run prepare && npm run test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",

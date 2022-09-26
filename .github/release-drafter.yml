@@ -1,6 +1,6 @@
 ---
-name-template: "v$RESOLVED_VERSION"
-tag-template: "v$RESOLVED_VERSION"
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
 template: |
   # Changelog
 
@@ -8,33 +8,33 @@ template: |
 
   See details of [all code changes](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION) since previous release.
 categories:
-  - title: "🚀 Features"
+  - title: '🚀 Features'
     labels:
-      - "feature"
-      - "enhancement"
-  - title: "🐛 Bug Fixes"
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
     labels:
-      - "fix"
-      - "bugfix"
-      - "bug"
-  - title: "🧰 Maintenance"
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🧰 Maintenance'
     labels:
-      - "infrastructure"
-      - "automation"
-      - "documentation"
-  - title: "🏎 Performance"
-    label: "performance"
-change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+      - 'infrastructure'
+      - 'automation'
+      - 'documentation'
+  - title: '🏎 Performance'
+    label: 'performance'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 version-resolver:
   major:
     labels:
-      - "type: breaking"
+      - 'type: breaking'
   minor:
     labels:
-      - "type: enhancement"
+      - 'type: enhancement'
   patch:
     labels:
-      - "type: bug"
-      - "type: maintenance"
-      - "type: documentation"
+      - 'type: bug'
+      - 'type: maintenance'
+      - 'type: documentation'
   default: patch
