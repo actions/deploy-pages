@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       TAG_NAME:
-        description: "Tag name that the major tag will point to"
+        description: 'Tag name that the major tag will point to'
         required: true
 
 env:

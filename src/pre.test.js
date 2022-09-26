@@ -2,8 +2,6 @@ const core = require('@actions/core')
 const process = require('process')
 const axios = require('axios')
 
-const { expect, jest } = require('@jest/globals')
-
 const { emitTelemetry } = require('./pre')
 
 describe('emitTelemetry', () => {

@@ -1,5 +1,3 @@
-require('regenerator-runtime/runtime')
-
 // This package assumes a site has already been built and the files exist in the current workspace
 // If there's an artifact named `artifact.tar`, it can upload that to actions on its own,
 // without the user having to do the tar process themselves.
