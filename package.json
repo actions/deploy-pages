@@ -23,12 +23,13 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
-    "lint": "eslint src",
-    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt && ncc build src/pre.js -o pre --source-map --license licenses.txt",
-    "test": "jest",
+    "all": "npm run format && npm run lint && npm run prepare && npm run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "all": "npm run format && npm run lint && npm run prepare && npm run test"
+    "lint": "DEBUG=eslint:cli-engine eslint --fix .",
+    "lint:check": "DEBUG=eslint:cli-engine eslint .",
+    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt && ncc build src/pre.js -o pre --source-map --license licenses.txt",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
