@@ -9,20 +9,20 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Set Node.JS
-      uses: actions/setup-node@v2
-      with:
-        node-version: 16.x
+      - name: Set Node.JS
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
 
-    - name: Install dependencies
-      run: npm install
-    - name: Run tests
-      run: npm run test
-    # Drafts your next Release notes as Pull Requests are merged into "main"
-    - uses: release-drafter/release-drafter@v5
-      if: github.ref_name == 'main'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test
+      # Drafts your next Release notes as Pull Requests are merged into "main"
+      - uses: release-drafter/release-drafter@v5
+        if: github.ref_name == 'main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
