@@ -61,6 +61,7 @@ class Deployment {
         payload.preview = true
       }
       core.info(`Creating deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
+      core.info(`Sending payload to: ${pagesDeployEndpoint}`)
       const response = await axios.post(pagesDeployEndpoint, payload, {
         headers: {
           Accept: 'application/vnd.github.v3+json',
