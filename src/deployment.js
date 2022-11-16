@@ -67,7 +67,8 @@ class Deployment {
         headers: {
           Accept: 'application/vnd.github.v3+json',
           Authorization: `Bearer ${this.githubToken}`,
-          'Content-type': 'application/json'
+          'Content-type': 'application/json',
+          Host: 'api.github.com'
         }
       })
       this.requestedDeployment = true
