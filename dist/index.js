@@ -6908,7 +6908,7 @@ function getRequiredVars() {
     buildActor: process.env.GITHUB_ACTOR,
     actionsId: process.env.GITHUB_ACTION,
     githubToken: core.getInput('token'),
-    githubApiUrl: process.env.GITHUB_API_URL ?? 'https://api.github.com',
+    githubApiUrl: process.env.GITHUB_API_CUSTOM_URL ?? process.env.GITHUB_API_URL ?? 'https://api.github.com',
     artifactName: core.getInput('artifact_name') ?? 'github-pages',
     isPreview: core.getInput('preview') === 'true'
   }
@@ -6995,7 +6995,7 @@ class Deployment {
       }
       core.info(`Creating deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
       core.info(`Sending payload to: ${pagesDeployEndpoint}`)
-      core.info(`It should be sent do: ${process.env.GITHUB_API_URL}`)
+      core.info(`It should be sent do: ${process.env.GITHUB_API_CUSTOM_URL}`)
       const response = await axios.post(pagesDeployEndpoint, payload, {
         headers: {
           Accept: 'application/vnd.github.v3+json',
