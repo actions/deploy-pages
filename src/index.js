@@ -37,7 +37,7 @@ process.on('SIGTERM', cancelHandler)
 // Main
 const emitTelemetry = core.getInput('emit_telemetry')
 if (emitTelemetry === 'true') {
-  require('./pre')
+  // For compatibility, treat the use of this deprecated input as a no-op
 } else {
   main()
 }

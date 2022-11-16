@@ -23,7 +23,7 @@
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
-    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt && ncc build src/pre.js -o pre --source-map --license licenses.txt",
+    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
     "test": "jest"
   },
   "repository": {

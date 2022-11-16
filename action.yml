@@ -6,6 +6,7 @@ runs:
   main: 'dist/index.js'
 inputs:
   emit_telemetry:
+    deprecationMessage: 'Use of this input causes the action to do nothing. You should remove this build step from your workflow.'
     description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
     required: false
     default: 'false'
