@@ -6909,7 +6909,7 @@ function getRequiredVars() {
     actionsId: process.env.GITHUB_ACTION,
     githubToken: core.getInput('token'),
     githubApiUrl: process.env.GITHUB_API_URL ?? 'https://api.github.com',
-    artifactName: core.getInput('artifact_name') ?? 'github-pages',
+    artifactName: core.getInput('artifact_name') || 'github-pages',
     isPreview: core.getInput('preview') === 'true'
   }
 }
