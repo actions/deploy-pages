@@ -24,6 +24,7 @@ class Deployment {
     this.requestedDeployment = false
     this.deploymentInfo = null
     this.githubApiUrl = context.githubApiUrl
+    this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
   }
@@ -94,7 +95,8 @@ class Deployment {
         } else if (error.response.status == 403) {
           errorMessage += `Ensure GITHUB_TOKEN has permission "pages: write".`
         } else if (error.response.status == 404) {
-          errorMessage += `Ensure GitHub Pages has been enabled.`
+          const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
+          errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
         } else if (error.response.status >= 500) {
           errorMessage += `Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
         }
