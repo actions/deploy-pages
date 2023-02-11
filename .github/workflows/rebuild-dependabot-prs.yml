@@ -2,8 +2,8 @@ name: Rebuild distributables for Dependabot PRs
 
 on:
   push:
-		branches:
-			- 'dependabot/npm**'
+    branches:
+       - 'dependabot/npm**'
 
 permissions:
   contents: write
@@ -37,10 +37,10 @@ jobs:
         run: |
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after rebuild in dist folder. Committing..."
-	          git add dist/
-						git config --local user.name "github-actions[bot]"
-						git config --local user.email "github-actions[bot]@users.noreply.github.com"
-						git commit -m "Update distributables after Dependabot 🤖"
-						echo "Pushing branch ${{ github.ref_name }}"
-						git push origin ${{ github.ref_name }}
-					fi
+	    git add dist/
+            git config --local user.name "github-actions[bot]"
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update distributables after Dependabot 🤖"
+            echo "Pushing branch ${{ github.ref_name }}"
+            git push origin ${{ github.ref_name }}
+          fi
