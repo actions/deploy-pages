@@ -3,7 +3,7 @@ name: Rebuild distributables for Dependabot PRs
 on:
   push:
     branches:
-       - 'dependabot/npm**'
+      - 'dependabot/npm**'
 
 permissions:
   contents: write
