@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after rebuild in dist folder. Committing..."
-	    git add dist/
+            git add dist/
             git config --local user.name "github-actions[bot]"
             git config --local user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "Update distributables after Dependabot 🤖"
