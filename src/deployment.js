@@ -1,5 +1,6 @@
 const core = require('@actions/core')
 const axios = require('axios')
+const { HttpsProxyAgent } = require('https-proxy-agent')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
@@ -27,6 +28,10 @@ class Deployment {
     this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
+    this.proxyOptions = context.proxy ? {
+      httpsAgent: new HttpsProxyAgent(context.proxy),
+      proxy: false
+    } : {}
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
@@ -39,6 +44,7 @@ class Deployment {
       const artifactExgUrl = `${this.runTimeUrl}_apis/pipelines/workflows/${this.workflowRun}/artifacts?api-version=6.0-preview`
       core.info(`Artifact URL: ${artifactExgUrl}`)
       const { data } = await axios.get(artifactExgUrl, {
+        ...this.proxyOptions,
         headers: {
           Authorization: `Bearer ${this.runTimeToken}`,
           'Content-Type': 'application/json'
@@ -63,6 +69,7 @@ class Deployment {
       }
       core.info(`Creating deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
       const response = await axios.post(pagesDeployEndpoint, payload, {
+        ...this.proxyOptions,
         headers: {
           Accept: 'application/vnd.github.v3+json',
           Authorization: `Bearer ${this.githubToken}`,
@@ -136,6 +143,7 @@ class Deployment {
 
         // Check status
         var res = await axios.get(statusUrl, {
+          ...this.proxyOptions,
           headers: {
             Authorization: `token ${this.githubToken}`
           }
@@ -214,6 +222,7 @@ class Deployment {
         pagesCancelDeployEndpoint,
         {},
         {
+          ...this.proxyOptions,
           headers: {
             Accept: 'application/vnd.github.v3+json',
             Authorization: `Bearer ${this.githubToken}`,

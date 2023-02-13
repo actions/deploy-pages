@@ -37,6 +37,9 @@ inputs:
     description: 'Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!)'
     required: false
     default: 'false'
+  proxy:
+    description: 'Proxy URL string'
+    required: false
 outputs:
   page_url:
     description: 'URL to deployed GitHub Pages'

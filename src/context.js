@@ -14,7 +14,8 @@ function getRequiredVars() {
     githubApiUrl: process.env.GITHUB_API_URL ?? 'https://api.github.com',
     githubServerUrl: process.env.GITHUB_SERVER_URL ?? 'https://github.com',
     artifactName: core.getInput('artifact_name') || 'github-pages',
-    isPreview: core.getInput('preview') === 'true'
+    isPreview: core.getInput('preview') === 'true',
+    proxy: core.getInput('proxy')
   }
 }
 
