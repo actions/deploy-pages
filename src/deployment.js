@@ -28,10 +28,12 @@ class Deployment {
     this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
-    this.proxyOptions = context.proxy ? {
-      httpsAgent: new HttpsProxyAgent(context.proxy),
-      proxy: false
-    } : {}
+    this.proxyOptions = context.proxy
+      ? {
+          httpsAgent: new HttpsProxyAgent(context.proxy),
+          proxy: false
+        }
+      : {}
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
