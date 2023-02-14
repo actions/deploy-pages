@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAGES_AUTOMATION_PAT }}
 
       - name: Setup Node.JS
         uses: actions/setup-node@v3
