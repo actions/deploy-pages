@@ -192,19 +192,13 @@ class Deployment {
 
     // Cancel the deployment
     try {
-      const pagesCancelDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/cancel/${this.buildVersion}`
-      await axios.put(
-        pagesCancelDeployEndpoint,
-        {},
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${this.githubToken}`,
-            'Content-type': 'application/json'
-          }
-        }
-      )
-      core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
+      const deploymentId = this.deploymentInfo?.id || this.buildVersion
+      await cancelPagesDeployment({
+        githubToken: this.githubToken,
+        deploymentId
+      })
+      core.info(`Canceled deployment with ID ${deploymentId}`)
+
       if (this.deploymentInfo) {
         this.deploymentInfo.pending = false
       }
