@@ -3,7 +3,10 @@ const core = require('@actions/core')
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
 const {
-  getSignedArtifactUrl
+  getSignedArtifactUrl,
+  createPagesDeployment,
+  getPagesDeploymentStatus,
+  cancelPagesDeployment
 } = require('./api-client')
 
 const errorStatus = {
@@ -37,7 +40,6 @@ class Deployment {
       core.info(`Actor: ${this.buildActor}`)
       core.info(`Action ID: ${this.actionsId}`)
       core.info(`Actions Workflow Run ID: ${this.workflowRun}`)
-      const pagesDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment`
 
       const artifactUrl = await getSignedArtifactUrl({
         runtimeToken: this.runTimeToken,
@@ -85,7 +87,8 @@ class Deployment {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
           errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
         } else if (error.response.status >= 500) {
-          errorMessage += 'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
+          errorMessage +=
+            'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
         }
         throw new Error(errorMessage)
       } else {
@@ -108,7 +111,6 @@ class Deployment {
     let errorReportingInterval = 0
 
     try {
-
       /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
       while (true) {
         // Handle reporting interval
@@ -123,19 +125,25 @@ class Deployment {
         if (res.data.status === 'succeed') {
           core.info('Reported success!')
           core.setOutput('status', 'succeed')
-          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
+          if (this.deploymentInfo) {
+            this.deploymentInfo.pending = false
+          }
           break
         } else if (res.data.status === 'deployment_failed') {
           // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
           core.setFailed('Deployment failed, try again later.')
-          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
+          if (this.deploymentInfo) {
+            this.deploymentInfo.pending = false
+          }
           break
         } else if (res.data.status === 'deployment_content_failed') {
           // The uploaded artifact is invalid.
           core.setFailed(
             'Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.'
           )
-          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
+          if (this.deploymentInfo) {
+            this.deploymentInfo.pending = false
+          }
           break
         } else if (errorStatus[res.data.status]) {
           // A temporary error happened, will query the status again
