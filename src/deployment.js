@@ -18,7 +18,7 @@ class Deployment {
     this.runTimeToken = context.runTimeToken
     this.buildVersion = context.buildVersion
     this.buildActor = context.buildActor
-    this.actionsId = context.workflowRun
+    this.actionsId = context.actionsId
     this.githubToken = context.githubToken
     this.workflowRun = context.workflowRun
     this.requestedDeployment = false
@@ -35,6 +35,7 @@ class Deployment {
     try {
       core.info(`Actor: ${this.buildActor}`)
       core.info(`Action ID: ${this.actionsId}`)
+      core.info(`Actions Workflow Run ID: ${this.workflowRun}`)
       const pagesDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment`
       const artifactExgUrl = `${this.runTimeUrl}_apis/pipelines/workflows/${this.workflowRun}/artifacts?api-version=6.0-preview`
       core.info(`Artifact URL: ${artifactExgUrl}`)
