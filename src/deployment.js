@@ -97,19 +97,18 @@ class Deployment {
 
   // Poll the deployment endpoint for status
   async check() {
-    try {
-      const statusUrl =
-        this.deploymentInfo != null
-          ? this.deploymentInfo['status_url']
-          : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
-      const timeout = Number(core.getInput('timeout'))
-      const reportingInterval = Number(core.getInput('reporting_interval'))
-      const maxErrorCount = Number(core.getInput('error_count'))
-      var startTime = Date.now()
-      var errorCount = 0
+    const deploymentId = this.deploymentInfo?.id || this.buildVersion
+    const timeout = Number(core.getInput('timeout'))
+    const reportingInterval = Number(core.getInput('reporting_interval'))
+    const maxErrorCount = Number(core.getInput('error_count'))
 
-      // Time in milliseconds between two deployment status report when status errored, default 0.
-      var errorReportingInterval = 0
+    let startTime = Date.now()
+    let errorCount = 0
+
+    // Time in milliseconds between two deployment status report when status errored, default 0.
+    let errorReportingInterval = 0
+
+    try {
 
       /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
       while (true) {
@@ -117,10 +116,9 @@ class Deployment {
         await new Promise(r => setTimeout(r, reportingInterval + errorReportingInterval))
 
         // Check status
-        var res = await axios.get(statusUrl, {
-          headers: {
-            Authorization: `token ${this.githubToken}`
-          }
+        let res = await getPagesDeploymentStatus({
+          githubToken: this.githubToken,
+          deploymentId
         })
 
         if (res.data.status == 'succeed') {
