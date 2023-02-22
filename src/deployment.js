@@ -99,7 +99,17 @@ class Deployment {
 
   // Poll the deployment endpoint for status
   async check() {
-    const deploymentId = this.deploymentInfo?.id || this.buildVersion
+    // Don't attempt to check status if no deployment was created
+    if (!this.deploymentInfo) {
+      core.setFailed(errorStatus.not_found)
+      return
+    }
+    if (this.deploymentInfo.pending !== true) {
+      core.setFailed(errorStatus.unknown_status)
+      return
+    }
+
+    const deploymentId = this.deploymentInfo.id || this.buildVersion
     const timeout = Number(core.getInput('timeout'))
     const reportingInterval = Number(core.getInput('reporting_interval'))
     const maxErrorCount = Number(core.getInput('error_count'))
@@ -125,25 +135,19 @@ class Deployment {
         if (res.data.status === 'succeed') {
           core.info('Reported success!')
           core.setOutput('status', 'succeed')
-          if (this.deploymentInfo) {
-            this.deploymentInfo.pending = false
-          }
+          this.deploymentInfo.pending = false
           break
         } else if (res.data.status === 'deployment_failed') {
           // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
           core.setFailed('Deployment failed, try again later.')
-          if (this.deploymentInfo) {
-            this.deploymentInfo.pending = false
-          }
+          this.deploymentInfo.pending = false
           break
         } else if (res.data.status === 'deployment_content_failed') {
           // The uploaded artifact is invalid.
           core.setFailed(
             'Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.'
           )
-          if (this.deploymentInfo) {
-            this.deploymentInfo.pending = false
-          }
+          this.deploymentInfo.pending = false
           break
         } else if (errorStatus[res.data.status]) {
           // A temporary error happened, will query the status again
@@ -193,22 +197,20 @@ class Deployment {
 
   async cancel() {
     // Don't attempt to cancel if no deployment was created
-    if (!this.deploymentInfo?.pending) {
+    if (!this.deploymentInfo || this.deploymentInfo.pending !== true) {
       return
     }
 
     // Cancel the deployment
     try {
-      const deploymentId = this.deploymentInfo?.id || this.buildVersion
+      const deploymentId = this.deploymentInfo.id || this.buildVersion
       await cancelPagesDeployment({
         githubToken: this.githubToken,
         deploymentId
       })
       core.info(`Canceled deployment with ID ${deploymentId}`)
 
-      if (this.deploymentInfo) {
-        this.deploymentInfo.pending = false
-      }
+      this.deploymentInfo.pending = false
     } catch (error) {
       core.setFailed(error)
       if (error.response?.data) {
