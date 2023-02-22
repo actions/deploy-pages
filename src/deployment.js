@@ -102,12 +102,6 @@ class Deployment {
         this.deploymentInfo != null
           ? this.deploymentInfo['status_url']
           : `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment/status/${this.buildVersion}`
-      let pageUrl = this.deploymentInfo != null ? this.deploymentInfo['page_url'] : ''
-      const previewUrl = this.deploymentInfo != null ? this.deploymentInfo['preview_url'] : ''
-      if (this.isPreview && previewUrl) {
-        pageUrl = previewUrl
-      }
-      core.setOutput('page_url', pageUrl)
       const timeout = Number(core.getInput('timeout'))
       const reportingInterval = Number(core.getInput('reporting_interval'))
       const maxErrorCount = Number(core.getInput('error_count'))
