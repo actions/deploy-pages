@@ -3,6 +3,9 @@ const axios = require('axios')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
+const {
+  getSignedArtifactUrl
+} = require('./api-client')
 
 const errorStatus = {
   unknown_status: 'Unable to get deployment status.',
@@ -37,23 +40,13 @@ class Deployment {
       core.info(`Action ID: ${this.actionsId}`)
       core.info(`Actions Workflow Run ID: ${this.workflowRun}`)
       const pagesDeployEndpoint = `${this.githubApiUrl}/repos/${this.repositoryNwo}/pages/deployment`
-      const artifactExgUrl = `${this.runTimeUrl}_apis/pipelines/workflows/${this.workflowRun}/artifacts?api-version=6.0-preview`
-      core.info(`Artifact URL: ${artifactExgUrl}`)
-      const { data } = await axios.get(artifactExgUrl, {
-        headers: {
-          Authorization: `Bearer ${this.runTimeToken}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      core.info(JSON.stringify(data))
-      const artifactRawUrl = data?.value?.find(artifact => artifact.name === this.artifactName)?.url
-      if (!artifactRawUrl) {
-        throw new Error(
-          'No uploaded artifact was found! Please check if there are any errors at build step, or uploaded artifact name is correct.'
-        )
-      }
 
-      const artifactUrl = `${artifactRawUrl}&%24expand=SignedContent`
+      const artifactUrl = await getSignedArtifactUrl({
+        runtimeToken: this.runTimeToken,
+        workflowRunId: this.workflowRun,
+        artifactName: this.artifactName
+      })
+
       const payload = {
         artifact_url: artifactUrl,
         pages_build_version: this.buildVersion,
