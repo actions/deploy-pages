@@ -24,7 +24,6 @@ class Deployment {
     this.actionsId = context.actionsId
     this.githubToken = context.githubToken
     this.workflowRun = context.workflowRun
-    this.requestedDeployment = false
     this.deploymentInfo = null
     this.githubApiUrl = context.githubApiUrl
     this.githubServerUrl = context.githubServerUrl
@@ -47,30 +46,25 @@ class Deployment {
         artifactName: this.artifactName
       })
 
-      const payload = {
-        artifact_url: artifactUrl,
-        pages_build_version: this.buildVersion,
-        oidc_token: idToken
-      }
-      if (this.isPreview === true) {
-        payload.preview = true
-      }
-      core.info(`Creating deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
-      const response = await axios.post(pagesDeployEndpoint, payload, {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${this.githubToken}`,
-          'Content-type': 'application/json'
-        }
+      const deployment = await createPagesDeployment({
+        githubToken: this.githubToken,
+        artifactUrl,
+        buildVersion: this.buildVersion,
+        idToken,
+        isPreview: this.isPreview
       })
-      this.requestedDeployment = true
-      core.info(`Created deployment for ${this.buildVersion}`)
-      if (response && response.data) {
-        core.info(JSON.stringify(response.data))
-        this.deploymentInfo = response.data
+      this.deploymentInfo = {
+        ...deployment,
+        id: deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
+        pending: true
       }
+
+      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo.id}`)
+      core.info(JSON.stringify(deployment))
+
+      return deployment
     } catch (error) {
-      core.info(error.stack)
+      core.error(error.stack)
 
       // output raw error in debug mode.
       core.debug(JSON.stringify(error))
@@ -87,14 +81,14 @@ class Deployment {
           }
           errorMessage += `Responded with: ${message}`
         } else if (error.response.status == 403) {
-          errorMessage += `Ensure GITHUB_TOKEN has permission "pages: write".`
+          errorMessage += 'Ensure GITHUB_TOKEN has permission "pages: write".'
         } else if (error.response.status == 404) {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
           errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
         } else if (error.response.status >= 500) {
-          errorMessage += `Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+          errorMessage += 'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
         }
-        throw errorMessage
+        throw new Error(errorMessage)
       } else {
         throw error
       }
@@ -138,16 +132,19 @@ class Deployment {
         if (res.data.status == 'succeed') {
           core.info('Reported success!')
           core.setOutput('status', 'succeed')
+          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
           break
         } else if (res.data.status == 'deployment_failed') {
           // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
           core.setFailed('Deployment failed, try again later.')
+          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
           break
         } else if (res.data.status == 'deployment_content_failed') {
           // The uploaded artifact is invalid.
           core.setFailed(
             'Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.'
           )
+          if (this.deploymentInfo) { this.deploymentInfo.pending = false }
           break
         } else if (errorStatus[res.data.status]) {
           // A temporary error happened, will query the status again
@@ -196,8 +193,8 @@ class Deployment {
   }
 
   async cancel() {
-    // Don't attemp to cancel if no deployment was created
-    if (!this.requestedDeployment) {
+    // Don't attempt to cancel if no deployment was created
+    if (!this.deploymentInfo?.pending) {
       return
     }
 
@@ -216,6 +213,9 @@ class Deployment {
         }
       )
       core.info(`Deployment cancelled with ${pagesCancelDeployEndpoint}`)
+      if (this.deploymentInfo) {
+        this.deploymentInfo.pending = false
+      }
     } catch (error) {
       core.setFailed(error)
       if (error.response && error.response.data) {
