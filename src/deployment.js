@@ -1,5 +1,4 @@
 const core = require('@actions/core')
-const axios = require('axios')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
