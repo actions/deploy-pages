@@ -113,7 +113,7 @@ class Deployment {
       /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
       while (true) {
         // Handle reporting interval
-        await new Promise(r => setTimeout(r, reportingInterval + errorReportingInterval))
+        await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
         // Check status
         let res = await getPagesDeploymentStatus({
@@ -121,17 +121,17 @@ class Deployment {
           deploymentId
         })
 
-        if (res.data.status == 'succeed') {
+        if (res.data.status === 'succeed') {
           core.info('Reported success!')
           core.setOutput('status', 'succeed')
           if (this.deploymentInfo) { this.deploymentInfo.pending = false }
           break
-        } else if (res.data.status == 'deployment_failed') {
+        } else if (res.data.status === 'deployment_failed') {
           // Fall into permanent error, it may be caused by ongoing incident or malicious deployment content or exhausted automatic retry times.
           core.setFailed('Deployment failed, try again later.')
           if (this.deploymentInfo) { this.deploymentInfo.pending = false }
           break
-        } else if (res.data.status == 'deployment_content_failed') {
+        } else if (res.data.status === 'deployment_content_failed') {
           // The uploaded artifact is invalid.
           core.setFailed(
             'Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.'
@@ -140,15 +140,15 @@ class Deployment {
           break
         } else if (errorStatus[res.data.status]) {
           // A temporary error happened, will query the status again
-          core.info(errorStatus[res.data.status])
+          core.warning(errorStatus[res.data.status])
         } else {
           core.info('Current status: ' + res.data.status)
         }
 
-        if (res.status != 200 || !!errorStatus[res.data.status]) {
+        if (res.status !== 200 || !!errorStatus[res.data.status]) {
           errorCount++
 
-          // set the Maximum error reporting interval greater than 15 sec but below 30 sec.
+          // set the maximum error reporting interval greater than 15 sec but below 30 sec.
           if (errorReportingInterval < 1000 * 15) {
             errorReportingInterval = (errorReportingInterval << 1) | 1
           }
@@ -158,7 +158,7 @@ class Deployment {
         }
 
         if (errorCount >= maxErrorCount) {
-          core.info('Too many errors, aborting!')
+          core.error('Too many errors, aborting!')
           core.setFailed('Failed with status code: ' + res.status)
 
           // Explicitly cancel the deployment
@@ -168,7 +168,7 @@ class Deployment {
 
         // Handle timeout
         if (Date.now() - startTime >= timeout) {
-          core.info('Timeout reached, aborting!')
+          core.error('Timeout reached, aborting!')
           core.setFailed('Timeout reached, aborting!')
 
           // Explicitly cancel the deployment
@@ -178,8 +178,8 @@ class Deployment {
       }
     } catch (error) {
       core.setFailed(error)
-      if (error.response && error.response.data) {
-        core.info(JSON.stringify(error.response.data))
+      if (error.response?.data) {
+        core.error(JSON.stringify(error.response.data))
       }
     }
   }
@@ -204,8 +204,8 @@ class Deployment {
       }
     } catch (error) {
       core.setFailed(error)
-      if (error.response && error.response.data) {
-        core.info(JSON.stringify(error.response.data))
+      if (error.response?.data) {
+        core.error(JSON.stringify(error.response.data))
       }
     }
   }
