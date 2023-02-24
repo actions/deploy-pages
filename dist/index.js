@@ -9652,7 +9652,7 @@ async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, i
   core.info(`Creating Pages deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
 
   try {
-    const response = await octokit.rest.repos.createPagesDeployment({
+    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployment', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       ...payload
