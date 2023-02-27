@@ -6417,7 +6417,7 @@ module.exports = { Deployment }
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
-// Axios v1.3.3 Copyright (c) 2023 Matt Zabriskie and contributors
+// Axios v1.3.4 Copyright (c) 2023 Matt Zabriskie and contributors
 
 
 const FormData$1 = __nccwpck_require__(4334);
@@ -8371,7 +8371,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-const VERSION = "1.3.3";
+const VERSION = "1.3.4";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -8933,15 +8933,39 @@ function setProxy(options, configProxy, location) {
 
 const isHttpAdapterSupported = typeof process !== 'undefined' && utils.kindOf(process) === 'process';
 
+// temporary hotfix
+
+const wrapAsync = (asyncExecutor) => {
+  return new Promise((resolve, reject) => {
+    let onDone;
+    let isDone;
+
+    const done = (value, isRejected) => {
+      if (isDone) return;
+      isDone = true;
+      onDone && onDone(value, isRejected);
+    };
+
+    const _resolve = (value) => {
+      done(value);
+      resolve(value);
+    };
+
+    const _reject = (reason) => {
+      done(reason, true);
+      reject(reason);
+    };
+
+    asyncExecutor(_resolve, _reject, (onDoneHandler) => (onDone = onDoneHandler)).catch(_reject);
+  })
+};
+
 /*eslint consistent-return:0*/
 const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
-  /*eslint no-async-promise-executor:0*/
-  return new Promise(async function dispatchHttpRequest(resolvePromise, rejectPromise) {
-    let data = config.data;
-    const responseType = config.responseType;
-    const responseEncoding = config.responseEncoding;
+  return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
+    let {data} = config;
+    const {responseType, responseEncoding} = config;
     const method = config.method.toUpperCase();
-    let isFinished;
     let isDone;
     let rejected = false;
     let req;
@@ -8949,10 +8973,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     // temporary internal emitter until the AxiosRequest class will be implemented
     const emitter = new EventEmitter__default["default"]();
 
-    function onFinished() {
-      if (isFinished) return;
-      isFinished = true;
-
+    const onFinished = () => {
       if (config.cancelToken) {
         config.cancelToken.unsubscribe(abort);
       }
@@ -8962,28 +8983,15 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       }
 
       emitter.removeAllListeners();
-    }
+    };
 
-    function done(value, isRejected) {
-      if (isDone) return;
-
+    onDone((value, isRejected) => {
       isDone = true;
-
       if (isRejected) {
         rejected = true;
         onFinished();
       }
-
-      isRejected ? rejectPromise(value) : resolvePromise(value);
-    }
-
-    const resolve = function resolve(value) {
-      done(value);
-    };
-
-    const reject = function reject(value) {
-      done(value, true);
-    };
+    });
 
     function abort(reason) {
       emitter.emit('abort', !reason || reason.type ? new CanceledError(null, config, req) : reason);
