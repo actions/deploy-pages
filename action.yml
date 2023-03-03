@@ -11,6 +11,7 @@ inputs:
     required: false
     default: 'false'
   conclusion:
+    deprecationMessage: 'Use of this input does nothing as it was part of the deprecated `emit_telemetry` flow. You should remove this parameter from your workflow.'
     description: 'The status of the previous build.'
     required: false
   token:
