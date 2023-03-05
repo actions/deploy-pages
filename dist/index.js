@@ -9606,9 +9606,9 @@ const hc = __nccwpck_require__(6255)
 
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(1319)
-const { runTimeUrl: RUNTIME_URL } = getContext()
 
 async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
+  const { runTimeUrl: RUNTIME_URL } = getContext()
   const artifactExchangeUrl = `${RUNTIME_URL}_apis/pipelines/workflows/${workflowRunId}/artifacts?api-version=6.0-preview`
 
   const httpClient = new hc.HttpClient()
