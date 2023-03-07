@@ -19,7 +19,7 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
     })
 
     data = response?.result
-    core.info(JSON.stringify(data))
+    core.debug(JSON.stringify(data))
   } catch (error) {
     core.error('Getting signed artifact URL failed', error)
     throw error

@@ -45,9 +45,9 @@ class Deployment {
   // by creating a deployment with that artifact
   async create(idToken) {
     try {
-      core.info(`Actor: ${this.buildActor}`)
-      core.info(`Action ID: ${this.actionsId}`)
-      core.info(`Actions Workflow Run ID: ${this.workflowRun}`)
+      core.debug(`Actor: ${this.buildActor}`)
+      core.debug(`Action ID: ${this.actionsId}`)
+      core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
       const artifactUrl = await getSignedArtifactUrl({
         runtimeToken: this.runTimeToken,
@@ -64,12 +64,12 @@ class Deployment {
       })
       this.deploymentInfo = {
         ...deployment,
-        id: deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
+        id: deployment?.id || deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
         pending: true
       }
 
       core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo.id}`)
-      core.info(JSON.stringify(deployment))
+      core.debug(JSON.stringify(deployment))
 
       return deployment
     } catch (error) {
