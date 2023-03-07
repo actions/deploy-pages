@@ -3,13 +3,15 @@ const process = require('process')
 const cp = require('child_process')
 const path = require('path')
 const nock = require('nock')
-const axios = require('axios')
 
 const { Deployment } = require('./deployment')
 
+const fakeJwt =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
+
 describe('with all environment variables set', () => {
   beforeEach(() => {
-    process.env.ACTIONS_RUNTIME_URL = 'my-url'
+    process.env.ACTIONS_RUNTIME_URL = 'http://my-url'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
     process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
@@ -20,12 +22,7 @@ describe('with all environment variables set', () => {
     process.env.GITHUB_ACTION_PATH = 'something'
   })
 
-  afterEach(() => {
-    // Remove mock for `core.getInput('preview')`
-    delete process.env.INPUT_PREVIEW
-  })
-
-  it('Executes cleanly', done => {
+  it('executes cleanly', done => {
     const ip = path.join(__dirname, './index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
       expect(stdout).toMatch(/::debug::all variables are set/)
@@ -58,6 +55,7 @@ describe('create', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
+
     jest.spyOn(core, 'getInput').mockImplementation(param => {
       switch (param) {
         case 'artifact_name':
@@ -83,11 +81,15 @@ describe('create', () => {
     jest.spyOn(core, 'debug').mockImplementation(jest.fn())
   })
 
+  afterEach(() => {
+    // Remove mock for `core.getInput('preview')`
+    delete process.env.INPUT_PREVIEW
+  })
+
   it('can successfully create a deployment', async () => {
     process.env.GITHUB_SHA = 'valid-build-version'
-    const fakeJwt =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
-    const scope = nock(`http://my-url`)
+
+    const artifactExchangeScope = nock(`http://my-url`)
       .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
       .reply(200, {
         value: [
@@ -96,40 +98,36 @@ describe('create', () => {
         ]
       })
 
+    const createDeploymentScope = nock('https://api.github.com')
+      .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+        pages_build_version: process.env.GITHUB_SHA,
+        oidc_token: fakeJwt
+      })
+      .reply(200, {
+        status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+        page_url: 'https://actions.github.io/is-awesome'
+      })
+
     core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
-    axios.post = jest.fn().mockResolvedValue('test')
 
     // Create the deployment
     const deployment = new Deployment()
     await deployment.create(fakeJwt)
 
-    expect(axios.post).toBeCalledWith(
-      'https://api.github.com/repos/actions/is-awesome/pages/deployment',
-      {
-        artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
-        pages_build_version: 'valid-build-version',
-        oidc_token: fakeJwt
-      },
-      {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer gha-token`,
-          'Content-type': 'application/json'
-        }
-      }
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.info).toHaveBeenLastCalledWith(
+      expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
     )
 
-    expect(core.setFailed).not.toHaveBeenCalled()
-    expect(core.info).toHaveBeenCalledWith('Created deployment for valid-build-version')
-
-    scope.done()
+    artifactExchangeScope.done()
+    createDeploymentScope.done()
   })
 
   it('can successfully create a preview deployment', async () => {
     process.env.GITHUB_SHA = 'valid-build-version'
-    const fakeJwt =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
-    const scope = nock(`http://my-url`)
+
+    const artifactExchangeScope = nock(`http://my-url`)
       .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
       .reply(200, {
         value: [
@@ -138,8 +136,20 @@ describe('create', () => {
         ]
       })
 
+    const createDeploymentScope = nock('https://api.github.com')
+      .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+        pages_build_version: process.env.GITHUB_SHA,
+        oidc_token: fakeJwt,
+        preview: true
+      })
+      .reply(200, {
+        status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+        page_url: 'https://actions.github.io/is-awesome',
+        preview_url: 'https://actions.drafts.github.io/is-awesome'
+      })
+
     core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
-    axios.post = jest.fn().mockResolvedValue('test')
 
     // Return `"true"` for `core.getInput("preview")`
     process.env.INPUT_PREVIEW = 'true'
@@ -148,64 +158,38 @@ describe('create', () => {
     const deployment = new Deployment()
     await deployment.create(fakeJwt)
 
-    expect(axios.post).toBeCalledWith(
-      'https://api.github.com/repos/actions/is-awesome/pages/deployment',
-      {
-        artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
-        pages_build_version: 'valid-build-version',
-        oidc_token: fakeJwt,
-        preview: true
-      },
-      {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer gha-token`,
-          'Content-type': 'application/json'
-        }
-      }
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.info).toHaveBeenLastCalledWith(
+      expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
     )
 
-    expect(core.setFailed).not.toHaveBeenCalled()
-    expect(core.info).toHaveBeenCalledWith('Created deployment for valid-build-version')
-
-    scope.done()
+    artifactExchangeScope.done()
+    createDeploymentScope.done()
   })
 
-  it('Reports errors with failed deployments', async () => {
+  it('reports errors with failed deployments', async () => {
     process.env.GITHUB_SHA = 'invalid-build-version'
-    const scope = nock(`http://my-url`)
+    const artifactExchangeScope = nock(`http://my-url`)
       .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
       .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
 
-    axios.post = jest.fn().mockRejectedValue({
-      status: 400
-    })
+    const createDeploymentScope = nock('https://api.github.com')
+      .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+        pages_build_version: process.env.GITHUB_SHA
+      })
+      .reply(400, { message: 'Bad request' })
 
     // Create the deployment
     const deployment = new Deployment()
-    try {
-      deployment.create()
-    } catch (err) {
-      expect(axios.post).toBeCalledWith(
-        'https://api.github.com/repos/actions/is-awesome/pages/deployment',
-        {
-          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
-          pages_build_version: 'invalid-build-version'
-        },
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: 'Bearer ',
-            'Content-type': 'application/json'
-          }
-        }
+    await expect(deployment.create()).rejects.toEqual(
+      new Error(
+        `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
       )
+    )
 
-      expect(core.info).toHaveBeenLastCalledWith('Failed to create deployment for invalid-build-version.')
-      expect(core.setFailed).toHaveBeenCalledWith({ status: 400 })
-
-      scope.done()
-    }
+    artifactExchangeScope.done()
+    createDeploymentScope.done()
   })
 })
 
@@ -238,22 +222,34 @@ describe('check', () => {
 
   it('sets output to success when deployment is successful', async () => {
     process.env.GITHUB_SHA = 'valid-build-version'
-    let repositoryNwo = process.env.GITHUB_REPOSITORY
-    let buildVersion = process.env.GITHUB_SHA
 
-    // mock a successful call to create a deployment
-    axios.post = jest.fn().mockResolvedValue({ status: 200 })
+    const artifactExchangeScope = nock(`http://my-url`)
+      .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      .reply(200, {
+        value: [
+          { url: 'https://another-artifact.com', name: 'another-artifact' },
+          { url: 'https://fake-artifact.com', name: 'github-pages' }
+        ]
+      })
 
-    // mock a completed deployment with status = 'succeed'
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
+    const createDeploymentScope = nock('https://api.github.com')
+      .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+        pages_build_version: process.env.GITHUB_SHA,
+        oidc_token: fakeJwt
+      })
+      .reply(200, {
+        status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+        page_url: 'https://actions.github.io/is-awesome'
+      })
+
+    const deploymentStatusScope = nock('https://api.github.com')
+      .get(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`)
+      .reply(200, {
         status: 'succeed'
-      }
-    })
+      })
 
-    // Create the deployment
-    const deployment = new Deployment()
+    core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
     core.GetInput = jest.fn(input => {
       switch (input) {
         case 'timeout':
@@ -262,20 +258,17 @@ describe('check', () => {
           return 0
       }
     })
-    jest.spyOn(core, 'getInput')
+
+    // Create the deployment
+    const deployment = new Deployment()
+    await deployment.create(fakeJwt)
     await deployment.check()
 
-    expect(axios.get).toBeCalledWith(
-      `https://api.github.com/repos/${repositoryNwo}/pages/deployment/status/${buildVersion}`,
-      {
-        headers: {
-          Authorization: 'token gha-token'
-        }
-      }
-    )
-
     expect(core.setOutput).toBeCalledWith('status', 'succeed')
+    expect(core.info).toHaveBeenLastCalledWith('Reported success!')
 
-    expect(core.info).toHaveBeenCalledWith('Reported success!')
+    artifactExchangeScope.done()
+    createDeploymentScope.done()
+    deploymentStatusScope.done()
   })
 })
