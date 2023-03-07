@@ -45,7 +45,7 @@ describe('with variables missing', () => {
 })
 
 describe('Deployment', () => {
-  beforeAll(() => {
+  beforeEach(() => {
     process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
@@ -195,32 +195,6 @@ describe('Deployment', () => {
   })
 
   describe('#check', () => {
-    beforeAll(() => {
-      process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
-      process.env.GITHUB_RUN_ID = '123'
-      process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
-      process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
-      process.env.GITHUB_TOKEN = 'gha-token'
-      process.env.GITHUB_SHA = '123abc'
-      process.env.GITHUB_ACTOR = 'monalisa'
-      process.env.GITHUB_ACTION = '__monalisa/octocat'
-      process.env.GITHUB_ACTION_PATH = 'something'
-      process.env.ARTIFACT_NAME = 'github-pages'
-
-      jest.spyOn(core, 'setOutput').mockImplementation(param => {
-        return param
-      })
-
-      jest.spyOn(core, 'setFailed').mockImplementation(param => {
-        return param
-      })
-      // Mock error/warning/info/debug
-      jest.spyOn(core, 'error').mockImplementation(jest.fn())
-      jest.spyOn(core, 'warning').mockImplementation(jest.fn())
-      jest.spyOn(core, 'info').mockImplementation(jest.fn())
-      jest.spyOn(core, 'debug').mockImplementation(jest.fn())
-    })
-
     it('sets output to success when deployment is successful', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
