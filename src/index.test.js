@@ -247,4 +247,49 @@ describe('Deployment', () => {
       deploymentStatusScope.done()
     })
   })
+
+  describe('#cancel', () => {
+    it('can successfully cancel a deployment', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      const cancelDeploymentScope = nock('https://api.github.com')
+        .put(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/cancel/${process.env.GITHUB_SHA}`)
+        .reply(200, {})
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+
+      // Cancel it
+      await deployment.cancel()
+
+      expect(core.info).toHaveBeenLastCalledWith(`Canceled deployment with ID ${process.env.GITHUB_SHA}`)
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+      cancelDeploymentScope.done()
+    })
+  })
 })
