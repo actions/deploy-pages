@@ -62,13 +62,17 @@ class Deployment {
         idToken,
         isPreview: this.isPreview
       })
-      this.deploymentInfo = {
-        ...deployment,
-        id: deployment?.id || deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
-        pending: true
+
+      if (deployment) {
+        this.deploymentInfo = {
+          ...deployment,
+          id: deployment?.id || deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
+          pending: true
+        }
       }
 
-      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo.id}`)
+      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
+
       core.debug(JSON.stringify(deployment))
 
       return deployment
