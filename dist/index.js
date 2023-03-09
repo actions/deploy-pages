@@ -4095,62 +4095,53 @@ const logOnceHeaders = once(deprecation => console.warn(deprecation));
 /**
  * Error with extra properties to help with debugging
  */
-
 class RequestError extends Error {
   constructor(message, statusCode, options) {
-    super(message); // Maintains proper stack trace (only available on V8)
-
+    super(message);
+    // Maintains proper stack trace (only available on V8)
     /* istanbul ignore next */
-
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
-
     this.name = "HttpError";
     this.status = statusCode;
     let headers;
-
     if ("headers" in options && typeof options.headers !== "undefined") {
       headers = options.headers;
     }
-
     if ("response" in options) {
       this.response = options.response;
       headers = options.response.headers;
-    } // redact request credentials without mutating original request options
-
-
+    }
+    // redact request credentials without mutating original request options
     const requestCopy = Object.assign({}, options.request);
-
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
       });
     }
-
-    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
+    requestCopy.url = requestCopy.url
+    // client_id & client_secret can be passed as URL query parameters to increase rate limit
     // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
-    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
+    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]")
+    // OAuth tokens can be passed as URL query parameters, although it is not recommended
     // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
     .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy; // deprecations
-
+    this.request = requestCopy;
+    // deprecations
     Object.defineProperty(this, "code", {
       get() {
         logOnceCode(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
         return statusCode;
       }
-
     });
     Object.defineProperty(this, "headers", {
       get() {
         logOnceHeaders(new deprecation.Deprecation("[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."));
         return headers || {};
       }
-
     });
   }
-
 }
 
 exports.RequestError = RequestError;
@@ -4173,7 +4164,7 @@ var endpoint = __nccwpck_require__(9440);
 var universalUserAgent = __nccwpck_require__(5030);
 var isPlainObject = __nccwpck_require__(3287);
 var nodeFetch = _interopDefault(__nccwpck_require__(467));
-var requestError = __nccwpck_require__(537);
+var requestError = __nccwpck_require__(13);
 
 const VERSION = "5.6.3";
 
@@ -4339,6 +4330,88 @@ const request = withDefaults(endpoint.endpoint, {
 });
 
 exports.request = request;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 13:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var deprecation = __nccwpck_require__(8932);
+var once = _interopDefault(__nccwpck_require__(1223));
+
+const logOnceCode = once(deprecation => console.warn(deprecation));
+const logOnceHeaders = once(deprecation => console.warn(deprecation));
+/**
+ * Error with extra properties to help with debugging
+ */
+
+class RequestError extends Error {
+  constructor(message, statusCode, options) {
+    super(message); // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    this.name = "HttpError";
+    this.status = statusCode;
+    let headers;
+
+    if ("headers" in options && typeof options.headers !== "undefined") {
+      headers = options.headers;
+    }
+
+    if ("response" in options) {
+      this.response = options.response;
+      headers = options.response.headers;
+    } // redact request credentials without mutating original request options
+
+
+    const requestCopy = Object.assign({}, options.request);
+
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
+      });
+    }
+
+    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
+    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
+    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy; // deprecations
+
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnceCode(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
+      }
+
+    });
+    Object.defineProperty(this, "headers", {
+      get() {
+        logOnceHeaders(new deprecation.Deprecation("[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."));
+        return headers || {};
+      }
+
+    });
+  }
+
+}
+
+exports.RequestError = RequestError;
 //# sourceMappingURL=index.js.map
 
 
@@ -4549,6 +4622,102 @@ class Deprecation extends Error {
 }
 
 exports.Deprecation = Deprecation;
+
+
+/***/ }),
+
+/***/ 3703:
+/***/ ((module) => {
+
+// Source: 2014-06-11: http://en.wikipedia.org/wiki/HTTP_status_codes
+
+module.exports = {
+  100: "Continue",
+  101: "Switching Protocols",
+  102: "Processing",
+
+  200: "OK",
+  201: "Created",
+  202: "Accepted",
+  203: "Non-Authoritative Information",
+  204: "No Content",
+  205: "Reset Content",
+  206: "Partial Content",
+  207: "Multi-Status",
+  208: "Already Reported",
+  226: "IM Used",
+
+  300: "Multiple Choices",
+  301: "Moved Permanently",
+  302: "Found",
+  303: "See Other",
+  304: "Not Modified",
+  305: "Use Proxy",
+  306: "Switch Proxy",
+  307: "Temporary Redirect",
+  308: "Permanent Redirect",
+
+  400: "Bad Request",
+  401: "Unauthorized",
+  402: "Payment Required",
+  403: "Forbidden",
+  404: "Not Found",
+  405: "Method Not Allowed",
+  406: "Not Acceptable",
+  407: "Proxy Authentication Required",
+  408: "Request Timeout",
+  409: "Conflict",
+  410: "Gone",
+  411: "Length Required",
+  412: "Precondition Failed",
+  413: "Request Entity Too Large",
+  414: "Request-URI Too Long",
+  415: "Unsupported Media Type",
+  416: "Requested Range Not Satisfiable",
+  417: "Expectation Failed",
+  418: "I'm a teapot",
+  419: "Authentication Timeout",
+  420: "Method Failure",
+  420: "Enhance Your Calm",
+  422: "Unprocessable Entity",
+  423: "Locked",
+  424: "Failed Dependency",
+  426: "Upgrade Required",
+  428: "Precondition Required",
+  429: "Too Many Requests",
+  431: "Request Header Fields Too Large",
+  440: "Login Timeout",
+  444: "No Response",
+  449: "Retry With",
+  450: "Blocked by Windows Parental Controls",
+  451: "Unavailable For Legal Reasons",
+  451: "Redirect",
+  494: "Request Header Too Large",
+  495: "Cert Error",
+  496: "No Cert",
+  497: "HTTP to HTTPS",
+  499: "Client Closed Request",
+
+  500: "Internal Server Error",
+  501: "Not Implemented",
+  502: "Bad Gateway",
+  503: "Service Unavailable",
+  504: "Gateway Timeout",
+  505: "HTTP Version Not Supported",
+  506: "Variant Also Negotiates",
+  507: "Insufficient Storage",
+  508: "Loop Detected",
+  509: "Bandwidth Limit Exceeded",
+  510: "Not Extended",
+  511: "Network Authentication Required",
+  520: "Origin Error",
+  521: "Web server is down",
+  522: "Connection timed out",
+  523: "Proxy Declined Request",
+  524: "A timeout occurred",
+  598: "Network read timeout error",
+  599: "Network connect timeout error"
+};
 
 
 /***/ }),
@@ -9603,9 +9772,27 @@ function wrappy (fn, cb) {
 const core = __nccwpck_require__(2186)
 const github = __nccwpck_require__(5438)
 const hc = __nccwpck_require__(6255)
+const { RequestError } = __nccwpck_require__(537)
+const HttpStatusMessages = __nccwpck_require__(3703)
 
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(1319)
+
+// Mostly a lift from https://github.com/octokit/request.js/blob/bd72b7be53ab16a6c1c44be99eb73a328fb1e9e4/src/fetch-wrapper.ts#L151-L165
+// Minor revisions applied.
+function toErrorMessage(data) {
+  if (typeof data === 'string') return data
+
+  if (data != null && 'message' in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(', ')}`
+    }
+    return data.message
+  }
+
+  // Defer back to the caller
+  return null
+}
 
 async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
   const { runTimeUrl: RUNTIME_URL } = getContext()
@@ -9616,11 +9803,58 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
 
   try {
     core.info(`Artifact exchange URL: ${artifactExchangeUrl}`)
-    const response = await httpClient.getJson(artifactExchangeUrl, {
-      Authorization: `Bearer ${runtimeToken}`
-    })
+    const requestHeaders = {
+      accept: 'application/json',
+      authorization: `Bearer ${runtimeToken}`
+    }
+    const res = await httpClient.get(artifactExchangeUrl, requestHeaders)
 
-    data = response?.result
+    // Parse the response body as JSON
+    let obj = null
+    try {
+      const contents = await res.readBody()
+      if (contents && contents.length > 0) {
+        obj = JSON.parse(contents)
+      }
+    } catch (error) {
+      // Invalid resource (contents not json);  leaving result obj null
+    }
+
+    // Specific response shape aligned with Octokit
+    const response = {
+      url: res.message.url || artifactExchangeUrl,
+      status: res.message.statusCode || 0,
+      headers: {
+        ...res.message?.headers
+      },
+      data: obj
+    }
+
+    // Forcibly throw errors for negative HTTP status codes!
+    // @actions/http-client doesn't do this by default.
+    // Mimic the errors thrown by Octokit for consistency.
+    if (response.status >= 400) {
+      throw new RequestError(
+        toErrorMessage(response.data) ||
+          res.message?.statusMessage ||
+          HttpStatusMessages[response.status] ||
+          'Unknown error',
+        response.status,
+        {
+          response,
+          request: {
+            method: 'GET',
+            url: artifactExchangeUrl,
+            headers: {
+              ...requestHeaders
+            },
+            body: null
+          }
+        }
+      )
+    }
+
+    data = response.data
     core.debug(JSON.stringify(data))
   } catch (error) {
     core.error('Getting signed artifact URL failed', error)
@@ -9833,21 +10067,15 @@ class Deployment {
 
       // build customized error message based on server response
       if (error.response) {
-        let errorMessage = `Failed to create deployment (status: ${error.response.status}) with build version ${this.buildVersion}. `
-        if (error.response.status == 400) {
-          let message = ''
-          if (error.response.data && error.response.data.message) {
-            message = error.response.data.message
-          } else {
-            message = error.response.data
-          }
-          errorMessage += `Responded with: ${message}`
-        } else if (error.response.status == 403) {
+        let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}. `
+        if (error.status === 400) {
+          errorMessage += `Responded with: ${error.message}`
+        } else if (error.status === 403) {
           errorMessage += 'Ensure GITHUB_TOKEN has permission "pages: write".'
-        } else if (error.response.status == 404) {
+        } else if (error.status === 404) {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
           errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
-        } else if (error.response.status >= 500) {
+        } else if (error.status >= 500) {
           errorMessage +=
             'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
         }
