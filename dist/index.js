@@ -10152,7 +10152,7 @@ class Deployment {
 
         // build customized error message based on server response
         if (error.response) {
-          errorStatus = error.response.status
+          errorStatus = error.status || error.response.status
 
           errorCount++
 
