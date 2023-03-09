@@ -168,6 +168,23 @@ describe('Deployment', () => {
       createDeploymentScope.done()
     })
 
+    it('reports errors with failed artifact exchange', async () => {
+      process.env.GITHUB_SHA = 'invalid-build-version'
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(400, {})
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await expect(deployment.create()).rejects.toEqual(
+        new Error(
+          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad Request`
+        )
+      )
+
+      artifactExchangeScope.done()
+    })
+
     it('reports errors with failed deployments', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
       const artifactExchangeScope = nock(`http://my-url`)

@@ -1,9 +1,27 @@
 const core = require('@actions/core')
 const github = require('@actions/github')
 const hc = require('@actions/http-client')
+const { RequestError } = require('@octokit/request-error')
+const HttpStatusMessages = require('http-status-messages')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
+
+// Mostly a lift from https://github.com/octokit/request.js/blob/bd72b7be53ab16a6c1c44be99eb73a328fb1e9e4/src/fetch-wrapper.ts#L151-L165
+// Minor revisions applied.
+function toErrorMessage(data) {
+  if (typeof data === 'string') return data
+
+  if (data != null && 'message' in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(', ')}`
+    }
+    return data.message
+  }
+
+  // Defer back to the caller
+  return null
+}
 
 async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
   const { runTimeUrl: RUNTIME_URL } = getContext()
@@ -14,11 +32,58 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
 
   try {
     core.info(`Artifact exchange URL: ${artifactExchangeUrl}`)
-    const response = await httpClient.getJson(artifactExchangeUrl, {
-      Authorization: `Bearer ${runtimeToken}`
-    })
+    const requestHeaders = {
+      accept: 'application/json',
+      authorization: `Bearer ${runtimeToken}`
+    }
+    const res = await httpClient.get(artifactExchangeUrl, requestHeaders)
 
-    data = response?.result
+    // Parse the response body as JSON
+    let obj = null
+    try {
+      const contents = await res.readBody()
+      if (contents && contents.length > 0) {
+        obj = JSON.parse(contents)
+      }
+    } catch (error) {
+      // Invalid resource (contents not json);  leaving result obj null
+    }
+
+    // Specific response shape aligned with Octokit
+    const response = {
+      url: res.message.url || artifactExchangeUrl,
+      status: res.message.statusCode || 0,
+      headers: {
+        ...res.message?.headers
+      },
+      data: obj
+    }
+
+    // Forcibly throw errors for negative HTTP status codes!
+    // @actions/http-client doesn't do this by default.
+    // Mimic the errors thrown by Octokit for consistency.
+    if (response.status >= 400) {
+      throw new RequestError(
+        toErrorMessage(response.data) ||
+          res.message?.statusMessage ||
+          HttpStatusMessages[response.status] ||
+          'Unknown error',
+        response.status,
+        {
+          response,
+          request: {
+            method: 'GET',
+            url: artifactExchangeUrl,
+            headers: {
+              ...requestHeaders
+            },
+            body: null
+          }
+        }
+      )
+    }
+
+    data = response.data
     core.debug(JSON.stringify(data))
   } catch (error) {
     core.error('Getting signed artifact URL failed', error)

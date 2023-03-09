@@ -80,21 +80,15 @@ class Deployment {
 
       // build customized error message based on server response
       if (error.response) {
-        let errorMessage = `Failed to create deployment (status: ${error.response.status}) with build version ${this.buildVersion}. `
-        if (error.response.status == 400) {
-          let message = ''
-          if (error.response.data && error.response.data.message) {
-            message = error.response.data.message
-          } else {
-            message = error.response.data
-          }
-          errorMessage += `Responded with: ${message}`
-        } else if (error.response.status == 403) {
+        let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}. `
+        if (error.status === 400) {
+          errorMessage += `Responded with: ${error.message}`
+        } else if (error.status === 403) {
           errorMessage += 'Ensure GITHUB_TOKEN has permission "pages: write".'
-        } else if (error.response.status == 404) {
+        } else if (error.status === 404) {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
           errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
-        } else if (error.response.status >= 500) {
+        } else if (error.status >= 500) {
           errorMessage +=
             'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
         }
