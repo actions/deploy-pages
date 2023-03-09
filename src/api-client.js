@@ -7,20 +7,51 @@ const HttpStatusMessages = require('http-status-messages')
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
 
-// Mostly a lift from https://github.com/octokit/request.js/blob/bd72b7be53ab16a6c1c44be99eb73a328fb1e9e4/src/fetch-wrapper.ts#L151-L165
-// Minor revisions applied.
-function toErrorMessage(data) {
-  if (typeof data === 'string') return data
-
-  if (data != null && 'message' in data) {
-    if (Array.isArray(data.errors)) {
-      return `${data.message}: ${data.errors.map(JSON.stringify).join(', ')}`
+async function processRuntimeResponse(res, requestOptions) {
+  // Parse the response body as JSON
+  let obj = null
+  try {
+    const contents = await res.readBody()
+    if (contents && contents.length > 0) {
+      obj = JSON.parse(contents)
     }
-    return data.message
+  } catch (error) {
+    // Invalid resource (contents not json); leaving resulting obj as null
   }
 
-  // Defer back to the caller
-  return null
+  // Specific response shape aligned with Octokit
+  const response = {
+    url: res.message?.url || requestOptions.url,
+    status: res.message?.statusCode || 0,
+    headers: {
+      ...res.message?.headers
+    },
+    data: obj
+  }
+
+  // Forcibly throw errors for negative HTTP status codes!
+  // @actions/http-client doesn't do this by default.
+  // Mimic the errors thrown by Octokit for consistency.
+  if (response.status >= 400) {
+    // Try to get an error message from the response body
+    const errorMsg =
+      (typeof response.data === 'string' && response.data) ||
+      response.data?.error ||
+      response.data?.message ||
+      // Try the Node HTTP IncomingMessage's statusMessage property
+      res.message?.statusMessage ||
+      // Fallback to the HTTP status message based on the status code
+      HttpStatusMessages[response.status] ||
+      // Or if the status code is unexpected...
+      `Unknown error (${response.status})`
+
+    throw new RequestError(errorMsg, response.status, {
+      response,
+      request: requestOptions
+    })
+  }
+
+  return response
 }
 
 async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
@@ -31,57 +62,24 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
   let data = null
 
   try {
-    core.info(`Artifact exchange URL: ${artifactExchangeUrl}`)
     const requestHeaders = {
       accept: 'application/json',
       authorization: `Bearer ${runtimeToken}`
     }
+    const requestOptions = {
+      method: 'GET',
+      url: artifactExchangeUrl,
+      headers: {
+        ...requestHeaders
+      },
+      body: null
+    }
+
+    core.info(`Artifact exchange URL: ${artifactExchangeUrl}`)
     const res = await httpClient.get(artifactExchangeUrl, requestHeaders)
 
-    // Parse the response body as JSON
-    let obj = null
-    try {
-      const contents = await res.readBody()
-      if (contents && contents.length > 0) {
-        obj = JSON.parse(contents)
-      }
-    } catch (error) {
-      // Invalid resource (contents not json);  leaving result obj null
-    }
-
-    // Specific response shape aligned with Octokit
-    const response = {
-      url: res.message.url || artifactExchangeUrl,
-      status: res.message.statusCode || 0,
-      headers: {
-        ...res.message?.headers
-      },
-      data: obj
-    }
-
-    // Forcibly throw errors for negative HTTP status codes!
-    // @actions/http-client doesn't do this by default.
-    // Mimic the errors thrown by Octokit for consistency.
-    if (response.status >= 400) {
-      throw new RequestError(
-        toErrorMessage(response.data) ||
-          res.message?.statusMessage ||
-          HttpStatusMessages[response.status] ||
-          'Unknown error',
-        response.status,
-        {
-          response,
-          request: {
-            method: 'GET',
-            url: artifactExchangeUrl,
-            headers: {
-              ...requestHeaders
-            },
-            body: null
-          }
-        }
-      )
-    }
+    // May throw a RequestError (HttpError)
+    const response = await processRuntimeResponse(res, requestOptions)
 
     data = response.data
     core.debug(JSON.stringify(data))
