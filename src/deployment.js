@@ -66,7 +66,7 @@ class Deployment {
       if (deployment) {
         this.deploymentInfo = {
           ...deployment,
-          id: deployment?.id || deployment?.['status_url']?.split('/')?.pop() || this.buildVersion,
+          id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
           pending: true
         }
       }
