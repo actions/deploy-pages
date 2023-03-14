@@ -41,3 +41,5 @@ inputs:
 outputs:
   page_url:
     description: 'URL to deployed GitHub Pages'
+- name: Deploy GitHub Pages site
+  uses: actions/deploy-pages@v1.2.5
