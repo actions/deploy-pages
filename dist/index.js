@@ -9899,7 +9899,7 @@ async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, i
   core.info(`Creating Pages deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
 
   try {
-    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployment', {
+    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       ...payload
@@ -9917,7 +9917,7 @@ async function getPagesDeploymentStatus({ githubToken, deploymentId }) {
 
   core.info('Getting Pages deployment status...')
   try {
-    const response = await octokit.request('GET /repos/{owner}/{repo}/pages/deployment/status/{deploymentId}', {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/pages/deployments/{deploymentId}', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       deploymentId
@@ -9935,7 +9935,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 
   core.info('Canceling Pages deployment...')
   try {
-    const response = await octokit.request('PUT /repos/{owner}/{repo}/pages/deployment/cancel/{deploymentId}', {
+    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments/{deploymentId}/cancel', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       deploymentId

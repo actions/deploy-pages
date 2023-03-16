@@ -100,13 +100,13 @@ describe('Deployment', () => {
         })
 
       const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
           artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
         .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
           page_url: 'https://actions.github.io/is-awesome'
         })
 
@@ -138,14 +138,14 @@ describe('Deployment', () => {
         })
 
       const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
           artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt,
           preview: true
         })
         .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
           page_url: 'https://actions.github.io/is-awesome',
           preview_url: 'https://actions.drafts.github.io/is-awesome'
         })
@@ -192,7 +192,7 @@ describe('Deployment', () => {
         .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
 
       const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
           artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
           pages_build_version: process.env.GITHUB_SHA
         })
@@ -225,18 +225,18 @@ describe('Deployment', () => {
         })
 
       const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
           artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
         .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
           page_url: 'https://actions.github.io/is-awesome'
         })
 
       const deploymentStatusScope = nock('https://api.github.com')
-        .get(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`)
+        .get(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`)
         .reply(200, {
           status: 'succeed'
         })
@@ -279,18 +279,18 @@ describe('Deployment', () => {
         })
 
       const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment`, {
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
           artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
         .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/status/${process.env.GITHUB_SHA}`,
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
           page_url: 'https://actions.github.io/is-awesome'
         })
 
       const cancelDeploymentScope = nock('https://api.github.com')
-        .put(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployment/cancel/${process.env.GITHUB_SHA}`)
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}/cancel`)
         .reply(200, {})
 
       core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
