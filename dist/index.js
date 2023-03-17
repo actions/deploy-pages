@@ -1942,10 +1942,6 @@ function checkBypass(reqUrl) {
     if (!reqUrl.hostname) {
         return false;
     }
-    const reqHost = reqUrl.hostname;
-    if (isLoopbackAddress(reqHost)) {
-        return true;
-    }
     const noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
     if (!noProxy) {
         return false;
@@ -1971,24 +1967,13 @@ function checkBypass(reqUrl) {
         .split(',')
         .map(x => x.trim().toUpperCase())
         .filter(x => x)) {
-        if (upperNoProxyItem === '*' ||
-            upperReqHosts.some(x => x === upperNoProxyItem ||
-                x.endsWith(`.${upperNoProxyItem}`) ||
-                (upperNoProxyItem.startsWith('.') &&
-                    x.endsWith(`${upperNoProxyItem}`)))) {
+        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
             return true;
         }
     }
     return false;
 }
 exports.checkBypass = checkBypass;
-function isLoopbackAddress(host) {
-    const hostLower = host.toLowerCase();
-    return (hostLower === 'localhost' ||
-        hostLower.startsWith('127.') ||
-        hostLower.startsWith('[::1]') ||
-        hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
-}
 //# sourceMappingURL=proxy.js.map
 
 /***/ }),
@@ -9899,7 +9884,7 @@ async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, i
   core.info(`Creating Pages deployment with payload:\n${JSON.stringify(payload, null, '\t')}`)
 
   try {
-    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments', {
+    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployment', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       ...payload
@@ -9917,7 +9902,7 @@ async function getPagesDeploymentStatus({ githubToken, deploymentId }) {
 
   core.info('Getting Pages deployment status...')
   try {
-    const response = await octokit.request('GET /repos/{owner}/{repo}/pages/deployments/{deploymentId}', {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/pages/deployment/status/{deploymentId}', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       deploymentId
@@ -9935,7 +9920,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 
   core.info('Canceling Pages deployment...')
   try {
-    const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments/{deploymentId}/cancel', {
+    const response = await octokit.request('PUT /repos/{owner}/{repo}/pages/deployment/cancel/{deploymentId}', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       deploymentId
