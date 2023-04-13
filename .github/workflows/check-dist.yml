@@ -23,22 +23,37 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set Node.js 16.x
+      # check the node version from the .node-version file
+      - name: fetch node version
+        id: node-version
+        run: |
+          version=$(cat .node-version)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+      - name: setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: ${{ steps.node-version.outputs.version }}
           cache: npm
 
-      - name: Install dependencies
+      - name: install dependencies
         run: npm ci
 
-      - name: Rebuild the dist/ directory
+      - name: rebuild the dist/ directory
         run: npm run prepare
 
-      - name: Compare the expected and actual dist/ directories
+      - name: compare the expected and actual dist/ directories
+        id: diff
         run: |
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build in dist folder. See status below:"
             git diff
             exit 1
           fi
+
+      # If index.js was different than expected, upload the expected version as an artifact
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        with:
+          name: dist
+          path: dist/

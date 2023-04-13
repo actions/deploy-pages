@@ -18,17 +18,24 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v3
 
-      - name: Setup Node.JS
+      # check the node version from the .node-version file
+      - name: fetch node version
+        id: node-version
+        run: |
+          version=$(cat .node-version)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+      - name: setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
-          cache: 'npm'
+          node-version: ${{ steps.node-version.outputs.version }}
+          cache: npm
 
-      - name: Install dependencies
+      - name: install dependencies
         run: npm ci
 
-      - name: Verify linter
+      - name: verify linter
         run: npm run lint:check
