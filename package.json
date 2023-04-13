@@ -26,7 +26,8 @@
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
-    "test": "jest"
+    "test": "(jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
+    "ci-test": "jest"
   },
   "repository": {
     "type": "git",
