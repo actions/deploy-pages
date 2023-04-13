@@ -48,6 +48,25 @@ jobs:
         uses: actions/deploy-pages@vX.X.X # <--- The latest version of this action
 ```
 
+## Inputs 📥
+
+| Input | Required? | Default | Description |
+| ----- | --------- | ------- | ----------- |
+| `token` | `true` | `${{ github.token }}` | The GitHub token used to create an authenticated client - Provided for you by default! |
+| `emit_telemetry` | `false` | `"false"` | Should this action only emit build telemetry instead of deploying the build artifact? |
+| `conclusion` | `false` | - | The status of the previous build |
+| `timeout` | `false` | `"600000"` | Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes) |
+| `error_count` | `false` | `"10"` | Maximum number of status report errors before cancelling a deployment (default: 10) |
+| `reporting_interval` | `false` | `"5000"` | Time in milliseconds between two deployment status report (default: 5 seconds) |
+| `artifact_name` | `false` | `"github-pages"` | The name of the artifact to deploy |
+| `preview` | `false` | `"false"` | Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!) |
+
+## Outputs 📤
+
+| Output | Description |
+| ------ | ----------- |
+| `page_url` | The URL of the deployed Pages site |
+
 ## Security considerations
 
 There are a few important considerations to be aware of:
