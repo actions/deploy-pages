@@ -42,5 +42,21 @@
   "bugs": {
     "url": "https://github.com/actions/deploy-pages/issues"
   },
-  "homepage": "https://github.com/actions/deploy-pages#readme"
+  "homepage": "https://github.com/actions/deploy-pages#readme",
+  "jest": {
+    "coverageReporters": [
+      "json-summary",
+      "text",
+      "lcov"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "./src/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 100
+      }
+    }
+  }
 }
