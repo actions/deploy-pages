@@ -1,4 +1,6 @@
-# deploy-pages
+# deploy-pages 🚀
+
+[![Check distributables](https://github.com/actions/deploy-pages/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-dist.yml) [![Check linter](https://github.com/actions/deploy-pages/actions/workflows/check-linter.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-linter.yml) [![Checking formatting](https://github.com/actions/deploy-pages/actions/workflows/check-formatting.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-formatting.yml) [![Run Tests](https://github.com/actions/deploy-pages/actions/workflows/test.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/test.yml) [![CodeQL](https://github.com/actions/deploy-pages/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/codeql-analysis.yml)
 
 This action is used to deploy [Actions artifacts][artifacts] to GitHub Pages.
 
@@ -43,7 +45,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@vX.X.X # <--- The latest version of this action
 ```
 
 ## Security considerations
@@ -62,7 +64,7 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we do it by default for you)
 
-# Release instructions
+## Release instructions
 
 In order to release a new version of this Action:
 
