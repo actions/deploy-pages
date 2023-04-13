@@ -2,11 +2,7 @@
 
 [![Check distributables](https://github.com/actions/deploy-pages/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-dist.yml) [![Check linter](https://github.com/actions/deploy-pages/actions/workflows/check-linter.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-linter.yml) [![Checking formatting](https://github.com/actions/deploy-pages/actions/workflows/check-formatting.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/check-formatting.yml) [![Run Tests](https://github.com/actions/deploy-pages/actions/workflows/test.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/test.yml) [![CodeQL](https://github.com/actions/deploy-pages/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/deploy-pages/actions/workflows/codeql-analysis.yml) [![coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-This action is used to deploy [Actions artifacts][artifacts] to GitHub Pages.
-
-## Scope
-
-⚠️ Official support for building Pages with Actions is in public beta at the moment.
+This action is used to deploy [Actions artifacts][artifacts] to [GitHub Pages](https://pages.github.com/).
 
 ## Usage
 
@@ -67,7 +63,11 @@ jobs:
 | ------ | ----------- |
 | `page_url` | The URL of the deployed Pages site |
 
-## Security considerations
+## Scope
+
+⚠️ Official support for building Pages with Actions is in public beta at the moment.
+
+## Security Considerations
 
 There are a few important considerations to be aware of:
 
@@ -83,7 +83,7 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we do it by default for you)
 
-## Release instructions
+## Release Instructions
 
 In order to release a new version of this Action:
 
