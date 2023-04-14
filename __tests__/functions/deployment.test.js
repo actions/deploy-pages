@@ -300,6 +300,13 @@ describe('Deployment', () => {
       createDeploymentScope.done()
       deploymentStatusScope.done()
     })
+
+    it('fails check when no deployment is found', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      const deployment = new Deployment()
+      await deployment.check()
+      expect(core.setFailed).toBeCalledWith('Deployment not found.')
+    })
   })
 
   describe('#cancel', () => {
