@@ -307,6 +307,49 @@ describe('Deployment', () => {
       await deployment.check()
       expect(core.setFailed).toBeCalledWith('Deployment not found.')
     })
+
+    it('exits early when deployment is not in progress', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+      core.GetInput = jest.fn(input => {
+        switch (input) {
+          case 'timeout':
+            return 10 * 1000
+          case 'reporting_interval':
+            return 0
+        }
+      })
+
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+      deployment.deploymentInfo.pending = false
+      await deployment.check()
+      expect(core.setFailed).toBeCalledWith('Unable to get deployment status.')
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+    })
   })
 
   describe('#cancel', () => {
