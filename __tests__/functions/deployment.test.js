@@ -409,5 +409,49 @@ describe('Deployment', () => {
       expect(core.debug).toHaveBeenCalledWith('all variables are set')
       expect(core.debug).toHaveBeenCalledWith(`No deployment to cancel`)
     })
+
+    it('catches an error when trying to cancel a deployment', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      // nock will throw an error every time it tries to cancel the deployment
+      const cancelDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}/cancel`)
+        .reply(500, {})
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+
+      // Cancel it
+      await deployment.cancel()
+
+      expect(core.error).toHaveBeenCalledWith(`Canceling Pages deployment failed`, expect.anything())
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+      cancelDeploymentScope.done()
+    })
   })
 })
