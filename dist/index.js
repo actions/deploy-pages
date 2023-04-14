@@ -10203,6 +10203,7 @@ class Deployment {
   async cancel() {
     // Don't attempt to cancel if no deployment was created
     if (!this.deploymentInfo || this.deploymentInfo.pending !== true) {
+      core.debug('No deployment to cancel')
       return
     }
 
