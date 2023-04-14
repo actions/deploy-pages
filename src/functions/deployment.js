@@ -98,6 +98,7 @@ class Deployment {
         }
         throw new Error(errorMessage)
       } else {
+        // istanbul ignore next
         throw error
       }
     }

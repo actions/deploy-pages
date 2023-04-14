@@ -147,6 +147,81 @@ describe('Deployment', () => {
   
         artifactExchangeScope.done()
       })
+
+      it('reports errors with a failed 500 in a deployment', async () => {
+        process.env.GITHUB_SHA = 'build-version'
+        const artifactExchangeScope = nock(`http://my-url`)
+          .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+          .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+  
+        const createDeploymentScope = nock('https://api.github.com')
+          .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+            artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+            pages_build_version: process.env.GITHUB_SHA
+          })
+          .reply(500, { message: 'oh no' })
+  
+        // Create the deployment
+        const deployment = new Deployment()
+        await expect(deployment.create()).rejects.toEqual(
+          new Error(
+            `Failed to create deployment (status: 500) with build version ${process.env.GITHUB_SHA}. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+          )
+        )
+  
+        artifactExchangeScope.done()
+        createDeploymentScope.done()
+      })
+
+      it('reports errors with an unexpected 403 during deployment', async () => {
+        process.env.GITHUB_SHA = 'build-version'
+        const artifactExchangeScope = nock(`http://my-url`)
+          .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+          .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+  
+        const createDeploymentScope = nock('https://api.github.com')
+          .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+            artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+            pages_build_version: process.env.GITHUB_SHA
+          })
+          .reply(403, { message: 'You are forbidden' })
+  
+        // Create the deployment
+        const deployment = new Deployment()
+        await expect(deployment.create()).rejects.toEqual(
+          new Error(
+            `Failed to create deployment (status: 403) with build version ${process.env.GITHUB_SHA}. Ensure GITHUB_TOKEN has permission "pages: write".`
+          )
+        )
+  
+        artifactExchangeScope.done()
+        createDeploymentScope.done()
+      })
+
+      it('reports errors with an unexpected 404 during deployment', async () => {
+        process.env.GITHUB_SHA = 'build-version'
+        const artifactExchangeScope = nock(`http://my-url`)
+          .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+          .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+  
+        const createDeploymentScope = nock('https://api.github.com')
+          .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+            artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+            pages_build_version: process.env.GITHUB_SHA
+          })
+          .reply(404, { message: 'Not found' })
+  
+        // Create the deployment
+        const deployment = new Deployment()
+        await expect(deployment.create()).rejects.toEqual(
+          new Error(
+            `Failed to create deployment (status: 404) with build version ${process.env.GITHUB_SHA}. Ensure GitHub Pages has been enabled: https://github.com/actions/is-awesome/settings/pages`
+          )
+        )
+  
+        artifactExchangeScope.done()
+        createDeploymentScope.done()
+      })
   
       it('reports errors with failed deployments', async () => {
         process.env.GITHUB_SHA = 'invalid-build-version'
