@@ -8,6 +8,7 @@ const fakeJwt =
 
 describe('Deployment', () => {
   beforeEach(() => {
+    jest.clearAllMocks()
     process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
     process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
@@ -394,6 +395,19 @@ describe('Deployment', () => {
       artifactExchangeScope.done()
       createDeploymentScope.done()
       cancelDeploymentScope.done()
+    })
+
+    it('can exit if a pages deployment was not created and none need to be cancelled', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      // Create the deployment
+      const deployment = new Deployment()
+
+      // Cancel it
+      await deployment.cancel()
+
+      expect(core.debug).toHaveBeenCalledWith('all variables are set')
+      expect(core.debug).toHaveBeenCalledWith(`No deployment to cancel`)
     })
   })
 })
