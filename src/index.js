@@ -48,9 +48,4 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-const emitTelemetry = core.getInput('emit_telemetry')
-if (emitTelemetry === 'true') {
-  // For compatibility, treat the use of this deprecated input as a no-op
-} else {
-  main()
-}
+main()

@@ -5,15 +5,6 @@ runs:
   using: 'node16'
   main: 'dist/index.js'
 inputs:
-  emit_telemetry:
-    deprecationMessage: 'Use of this input causes the action to do nothing. You should remove this build step from your workflow.'
-    description: 'Should this action only emit build telemetry instead of deploying the build artifact?'
-    required: false
-    default: 'false'
-  conclusion:
-    deprecationMessage: 'Use of this input does nothing as it was part of the deprecated `emit_telemetry` flow. You should remove this parameter from your workflow.'
-    description: 'The status of the previous build.'
-    required: false
   token:
     description: 'GitHub token'
     default: ${{ github.token }}

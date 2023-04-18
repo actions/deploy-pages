@@ -10,7 +10,7 @@ See [action.yml](action.yml) for the various `inputs` this action supports.
 
 For examples that make use of this action, check out our [starter-workflows][starter-workflows] in a variety of frameworks.
 
-This action expects an artifact named `github-pages` to have been created prior to execution. This is done automatically using [`actions/upload-pages-artifact`][upload-pages-artifact].
+This action expects an artifact named `github-pages` to have been created prior to execution. This is done automatically when using [`actions/upload-pages-artifact`][upload-pages-artifact].
 
 We recommend this action to be used in a dedicated job:
 
@@ -49,8 +49,6 @@ jobs:
 | Input | Required? | Default | Description |
 | ----- | --------- | ------- | ----------- |
 | `token` | `true` | `${{ github.token }}` | The GitHub token used to create an authenticated client - Provided for you by default! |
-| `emit_telemetry` | `false` | `"false"` | Should this action only emit build telemetry instead of deploying the build artifact? |
-| `conclusion` | `false` | - | The status of the previous build |
 | `timeout` | `false` | `"600000"` | Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes) |
 | `error_count` | `false` | `"10"` | Maximum number of status report errors before cancelling a deployment (default: 10) |
 | `reporting_interval` | `false` | `"5000"` | Time in milliseconds between two deployment status report (default: 5 seconds) |
