@@ -4,8 +4,8 @@
 
 const core = require('@actions/core')
 
-const { Deployment } = require('./functions/deployment')
-const getContext = require('./functions/context')
+const { Deployment } = require('./internal/deployment')
+const getContext = require('./internal/context')
 
 const deployment = new Deployment()
 

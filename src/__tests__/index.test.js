@@ -16,7 +16,7 @@ describe('with all environment variables set', () => {
   })
 
   it('executes cleanly', done => {
-    const ip = path.join(__dirname, '../src/index.js')
+    const ip = path.join(__dirname, '../index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
       expect(stdout).toMatch(/::debug::all variables are set/)
       done()
@@ -27,7 +27,7 @@ describe('with all environment variables set', () => {
 describe('with variables missing', () => {
   it('execution fails if there are missing variables', done => {
     delete process.env.ACTIONS_RUNTIME_URL
-    const ip = path.join(__dirname, '../src/index.js')
+    const ip = path.join(__dirname, '../index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
       expect(stdout).toBe('')
       expect(err).toBeTruthy()
