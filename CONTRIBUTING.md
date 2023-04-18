@@ -12,7 +12,7 @@ All contributions are welcome and greatly appreciated!
 4. Before opening a pull request, please run `npm run all` to verify formatting, linting, tests, generated files, etc.
 5. Commit and push your changes to your fork
 6. Open a pull request back to this repository
-7. Await for an approval or changed requested from the maintainers of this repository
+7. Wait for an approval or changes requested from the maintainers of this repository
 
 After merging the pull request, the maintainers of this repository will create a new release with those changes included. After that, everyone can utilize the newly integrated changes in their own Actions workflows and enjoy your awesome improvements!
 
