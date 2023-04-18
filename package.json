@@ -28,7 +28,7 @@
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
     "test": "jest",
-    "coverage-badge": "make-coverage-badge --output-path ./badges/coverage.svg"
+    "coverage-badge": "make-coverage-badge --output-path ./coverage_badge.svg"
   },
   "repository": {
     "type": "git",
@@ -56,7 +56,8 @@
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 70
+        "lines": 70,
+        "statements": 70
       }
     }
   }
