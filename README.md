@@ -1,10 +1,8 @@
-# deploy-pages
+# deploy-pages 🚀
 
-This action is used to deploy [Actions artifacts][artifacts] to GitHub Pages.
+[![Release](https://img.shields.io/github/v/release/actions/deploy-pages?label=Release&logo=github)](https://github.com/actions/deploy-pages/releases/latest) [![Linting](https://img.shields.io/github/actions/workflow/status/actions/deploy-pages/check-linter.yml?label=Linting&logo=github)](https://github.com/actions/deploy-pages/actions/workflows/check-linter.yml) [![Formatting](https://img.shields.io/github/actions/workflow/status/actions/deploy-pages/check-formatting.yml?label=Formatting&logo=github)](https://github.com/actions/deploy-pages/actions/workflows/check-formatting.yml) [![Tests](https://img.shields.io/github/actions/workflow/status/actions/deploy-pages/test.yml?label=Tests&logo=github)](https://github.com/actions/deploy-pages/actions/workflows/test.yml) ![Coverage](./coverage_badge.svg) [![Distributables](https://img.shields.io/github/actions/workflow/status/actions/deploy-pages/check-dist.yml?label=Distributables&logo=github)](https://github.com/actions/deploy-pages/actions/workflows/check-dist.yml) [![CodeQL](https://img.shields.io/github/actions/workflow/status/actions/deploy-pages/codeql-analysis.yml?label=CodeQL&logo=github)](https://github.com/actions/deploy-pages/actions/workflows/codeql-analysis.yml)
 
-## Scope
-
-⚠️ Official support for building Pages with Actions is in public beta at the moment.
+This action is used to deploy [Actions artifacts][artifacts] to [GitHub Pages](https://pages.github.com/).
 
 ## Usage
 
@@ -43,10 +41,39 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v2 # or the latest "vX.X.X" version tag for this action
 ```
 
-## Security considerations
+### Inputs 📥
+
+| Input | Required? | Default | Description |
+| ----- | --------- | ------- | ----------- |
+| `token` | `true` | `${{ github.token }}` | The GitHub token used to create an authenticated client - Provided for you by default! |
+| `emit_telemetry` | `false` | `"false"` | Should this action only emit build telemetry instead of deploying the build artifact? |
+| `conclusion` | `false` | - | The status of the previous build |
+| `timeout` | `false` | `"600000"` | Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes) |
+| `error_count` | `false` | `"10"` | Maximum number of status report errors before cancelling a deployment (default: 10) |
+| `reporting_interval` | `false` | `"5000"` | Time in milliseconds between two deployment status report (default: 5 seconds) |
+| `artifact_name` | `false` | `"github-pages"` | The name of the artifact to deploy |
+| `preview` | `false` | `"false"` | Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!) |
+
+### Outputs 📤
+
+| Output | Description |
+| ------ | ----------- |
+| `page_url` | The URL of the deployed Pages site |
+
+### Environment Variables 🌎
+
+| Variable | Description |
+| -------- | ----------- |
+| `GITHUB_PAGES` | This environment variable is created and set to the string value `"true"` so that framework build tools may choose to differentiate their output based on the intended target hosting platform. |
+
+## Scope
+
+⚠️ Official support for building Pages with Actions is in public beta at the moment.
+
+## Security Considerations
 
 There are a few important considerations to be aware of:
 
@@ -60,9 +87,9 @@ There are a few important considerations to be aware of:
 
 4. If your Pages site is using a source branch, the deployment must originate from this source branch unless [your environment is protected][environment-protection] in which case the environment protection rules take precedence over the source branch rule
 
-5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we do it by default for you)
+5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we will configure it by default for you).
 
-# Release instructions
+## Release Instructions
 
 In order to release a new version of this Action:
 

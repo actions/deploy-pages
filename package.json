@@ -1,6 +1,6 @@
 {
   "name": "deploy-pages",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Deploy an actions artifact to GitHub Pages",
   "main": "./dist/index.js",
   "dependencies": {
@@ -17,10 +17,12 @@
     "eslint-plugin-github": "^4.7.0",
     "jest": "^29.5.0",
     "nock": "^13.3.0",
-    "prettier": "^2.8.7"
+    "prettier": "^2.8.7",
+    "make-coverage-badge": "^1.2.0"
   },
   "scripts": {
-    "all": "npm run format && npm run lint && npm run prepare && npm run test",
+    "all": "npm run format && npm run lint && npm run prepare && npm run test && npm run coverage-badge",
+    "coverage-badge": "make-coverage-badge --output-path ./coverage_badge.svg",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
@@ -41,5 +43,22 @@
   "bugs": {
     "url": "https://github.com/actions/deploy-pages/issues"
   },
-  "homepage": "https://github.com/actions/deploy-pages#readme"
+  "homepage": "https://github.com/actions/deploy-pages#readme",
+  "jest": {
+    "coverageReporters": [
+      "json-summary",
+      "text",
+      "lcov"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "./src/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
 }

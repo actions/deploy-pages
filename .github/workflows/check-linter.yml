@@ -1,4 +1,4 @@
-name: Check linter
+name: Check linting
 
 on:
   push:
@@ -24,8 +24,8 @@ jobs:
       - name: Setup Node.JS
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
-          cache: 'npm'
+          node-version-file: '.node-version'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci

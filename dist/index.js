@@ -4949,7 +4949,7 @@ FetchError.prototype.name = 'FetchError';
 
 let convert;
 try {
-	convert = (__nccwpck_require__(2319).convert);
+	convert = (__nccwpck_require__(2877).convert);
 } catch (e) {}
 
 const INTERNALS = Symbol('Body internals');
@@ -9781,7 +9781,7 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 9432:
+/***/ 572:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(2186)
@@ -9791,7 +9791,7 @@ const { RequestError } = __nccwpck_require__(537)
 const HttpStatusMessages = __nccwpck_require__(3703)
 
 // All variables we need from the runtime are loaded here
-const getContext = __nccwpck_require__(1319)
+const getContext = __nccwpck_require__(8454)
 
 async function processRuntimeResponse(res, requestOptions) {
   // Parse the response body as JSON
@@ -9958,7 +9958,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 1319:
+/***/ 8454:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(2186)
@@ -9995,19 +9995,19 @@ module.exports = function getContext() {
 
 /***/ }),
 
-/***/ 2877:
+/***/ 2634:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(2186)
 
 // All variables we need from the runtime are loaded here
-const getContext = __nccwpck_require__(1319)
+const getContext = __nccwpck_require__(8454)
 const {
   getSignedArtifactUrl,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
-} = __nccwpck_require__(9432)
+} = __nccwpck_require__(572)
 
 const temporaryErrorStatus = {
   unknown_status: 'Unable to get deployment status.',
@@ -10098,6 +10098,7 @@ class Deployment {
         }
         throw new Error(errorMessage)
       } else {
+        // istanbul ignore next
         throw error
       }
     }
@@ -10202,6 +10203,7 @@ class Deployment {
   async cancel() {
     // Don't attempt to cancel if no deployment was created
     if (!this.deploymentInfo || this.deploymentInfo.pending !== true) {
+      core.debug('No deployment to cancel')
       return
     }
 
@@ -10229,7 +10231,7 @@ module.exports = { Deployment }
 
 /***/ }),
 
-/***/ 2319:
+/***/ 2877:
 /***/ ((module) => {
 
 module.exports = eval("require")("encoding");
@@ -10412,8 +10414,8 @@ var __webpack_exports__ = {};
 
 const core = __nccwpck_require__(2186)
 
-const { Deployment } = __nccwpck_require__(2877)
-const getContext = __nccwpck_require__(1319)
+const { Deployment } = __nccwpck_require__(2634)
+const getContext = __nccwpck_require__(8454)
 
 const deployment = new Deployment()
 

@@ -98,6 +98,7 @@ class Deployment {
         }
         throw new Error(errorMessage)
       } else {
+        // istanbul ignore next
         throw error
       }
     }
@@ -202,6 +203,7 @@ class Deployment {
   async cancel() {
     // Don't attempt to cancel if no deployment was created
     if (!this.deploymentInfo || this.deploymentInfo.pending !== true) {
+      core.debug('No deployment to cancel')
       return
     }
 
