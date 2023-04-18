@@ -13,17 +13,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: setup node
+      - name: Setup Node.JS
         uses: actions/setup-node@v3
         with:
           node-version-file: '.node-version'
           cache: npm
 
-      - name: install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: run tests
+      - name: Run tests
         run: npm run test

@@ -21,24 +21,24 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAGES_AUTOMATION_PAT }}
 
-      - name: setup node
+      - name: Setup Node.JS
         uses: actions/setup-node@v3
         with:
           node-version-file: '.node-version'
           cache: npm
 
-      - name: install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: rebuild the dist/ directory
+      - name: Rebuild the dist/ directory
         run: npm run prepare
 
-      - name: commit any differences present in the dist/ directory
+      - name: Commit any differences present in the dist/ directory
         run: |
           if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after rebuild in dist folder. Committing..."
