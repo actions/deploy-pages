@@ -21,14 +21,14 @@
     "make-coverage-badge": "^1.2.0"
   },
   "scripts": {
-    "all": "npm run format && npm run lint && npm run prepare && npm run test",
+    "all": "npm run format && npm run lint && npm run prepare && npm run test && npm run coverage-badge",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
-    "test": "(jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
-    "ci-test": "jest"
+    "test": "jest",
+    "coverage-badge": "make-coverage-badge --output-path ./badges/coverage.svg"
   },
   "repository": {
     "type": "git",
