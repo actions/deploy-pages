@@ -44,7 +44,7 @@ jobs:
         uses: actions/deploy-pages@vX.X.X # <--- The latest version of this action
 ```
 
-## Inputs 📥
+### Inputs 📥
 
 | Input | Required? | Default | Description |
 | ----- | --------- | ------- | ----------- |
@@ -57,11 +57,17 @@ jobs:
 | `artifact_name` | `false` | `"github-pages"` | The name of the artifact to deploy |
 | `preview` | `false` | `"false"` | Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!) |
 
-## Outputs 📤
+### Outputs 📤
 
 | Output | Description |
 | ------ | ----------- |
 | `page_url` | The URL of the deployed Pages site |
+
+### Environment Variables 🌎
+
+| Variable | Description |
+| -------- | ----------- |
+| `GITHUB_PAGES` | This environment variable is created and set to the string value `"true"` so that framework build tools may choose to differentiate their output based on the intended target hosting platform. |
 
 ## Scope
 
