@@ -87,7 +87,7 @@ There are a few important considerations to be aware of:
 
 4. If your Pages site is using a source branch, the deployment must originate from this source branch unless [your environment is protected][environment-protection] in which case the environment protection rules take precedence over the source branch rule
 
-5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we do it by default for you)
+5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we will configure it by default for you).
 
 ## Release Instructions
 
