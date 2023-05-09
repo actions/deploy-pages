@@ -10023,6 +10023,8 @@ const finalErrorStatus = {
   deployment_lost: 'Deployment failed to report final status.'
 }
 
+const maxTimeout = 600000
+
 class Deployment {
   constructor() {
     const context = getContext()
@@ -10044,6 +10046,12 @@ class Deployment {
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
+    if (Number(core.getInput('timeout')) > maxTimeout) {
+      core.warning(
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${maxTimeout} milliseconds.`
+      )
+    }
+
     try {
       core.debug(`Actor: ${this.buildActor}`)
       core.debug(`Action ID: ${this.actionsId}`)
@@ -10226,7 +10234,7 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment }
+module.exports = { Deployment, maxTimeout }
 
 
 /***/ }),

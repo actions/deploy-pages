@@ -1,7 +1,7 @@
 const core = require('@actions/core')
 const nock = require('nock')
 
-const { Deployment } = require('../../internal/deployment')
+const { Deployment, maxTimeout } = require('../../internal/deployment')
 
 const fakeJwt =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
@@ -247,6 +247,55 @@ describe('Deployment', () => {
       artifactExchangeScope.done()
       createDeploymentScope.done()
     })
+
+    it('warns when the timeout is greater than the maximum allowed', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'artifact_name':
+            return 'github-pages'
+          case 'token':
+            return process.env.GITHUB_TOKEN
+          case 'timeout':
+            return maxTimeout + 1
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+
+      expect(core.warning).toBeCalledWith(
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${maxTimeout} milliseconds.`
+      )
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+    })
   })
 
   describe('#check', () => {
@@ -280,14 +329,6 @@ describe('Deployment', () => {
         })
 
       core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
-      core.GetInput = jest.fn(input => {
-        switch (input) {
-          case 'timeout':
-            return 10 * 1000
-          case 'reporting_interval':
-            return 0
-        }
-      })
 
       // Create the deployment
       const deployment = new Deployment()
@@ -333,14 +374,6 @@ describe('Deployment', () => {
         })
 
       core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
-      core.GetInput = jest.fn(input => {
-        switch (input) {
-          case 'timeout':
-            return 10 * 1000
-          case 'reporting_interval':
-            return 0
-        }
-      })
 
       const deployment = new Deployment()
       await deployment.create(fakeJwt)
