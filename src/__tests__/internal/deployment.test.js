@@ -384,6 +384,201 @@ describe('Deployment', () => {
       artifactExchangeScope.done()
       createDeploymentScope.done()
     })
+
+    it('enforces max timeout', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      const cancelDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}/cancel`)
+        .reply(200, {})
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Set timeout to great than max
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'artifact_name':
+            return 'github-pages'
+          case 'token':
+            return process.env.GITHUB_TOKEN
+          case 'timeout':
+            return maxTimeout + 1
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const now = Date.now()
+      const mockStartTime = now - maxTimeout
+      jest
+        .spyOn(Date, 'now')
+        .mockImplementationOnce(() => mockStartTime)
+        .mockImplementationOnce(() => now)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+      await deployment.check()
+
+      expect(deployment.timeout).toEqual(maxTimeout)
+      expect(core.error).toBeCalledWith('Timeout reached, aborting!')
+      expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+      cancelDeploymentScope.done()
+    })
+
+    it('sets timeout to user timeout if user timeout is less than max timeout', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      const cancelDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}/cancel`)
+        .reply(200, {})
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Set timeout to great than max
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'artifact_name':
+            return 'github-pages'
+          case 'token':
+            return process.env.GITHUB_TOKEN
+          case 'timeout':
+            return 42
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const now = Date.now()
+      const mockStartTime = now - 42
+      jest
+        .spyOn(Date, 'now')
+        .mockImplementationOnce(() => mockStartTime)
+        .mockImplementationOnce(() => now)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+      await deployment.check()
+
+      expect(deployment.timeout).toEqual(42)
+      expect(core.error).toBeCalledWith('Timeout reached, aborting!')
+      expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+      cancelDeploymentScope.done()
+    })
+
+    it('sets output to success when timeout is set but not reached', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      const deploymentStatusScope = nock('https://api.github.com')
+        .get(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`)
+        .reply(200, {
+          status: 'succeed'
+        })
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Set timeout to great than max
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'artifact_name':
+            return 'github-pages'
+          case 'token':
+            return process.env.GITHUB_TOKEN
+          case 'timeout':
+            return 42
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const now = Date.now()
+      const mockStartTime = now
+      jest
+        .spyOn(Date, 'now')
+        .mockImplementationOnce(() => mockStartTime)
+        .mockImplementationOnce(() => now)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+      await deployment.check()
+
+      expect(deployment.timeout).toEqual(42)
+      expect(core.error).not.toBeCalled()
+      expect(core.setOutput).toBeCalledWith('status', 'succeed')
+      expect(core.info).toHaveBeenLastCalledWith('Reported success!')
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+      deploymentStatusScope.done()
+    })
   })
 
   describe('#cancel', () => {

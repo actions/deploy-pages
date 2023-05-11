@@ -41,6 +41,8 @@ class Deployment {
     this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
+    this.timeout = maxTimeout
+    this.startTime = null
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
@@ -51,6 +53,9 @@ class Deployment {
         `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${maxTimeout} milliseconds.`
       )
     }
+
+    let timeoutInput = Number(core.getInput('timeout'))
+    this.timeout = timeoutInput <= 0 ? maxTimeout : Math.min(timeoutInput, maxTimeout)
 
     try {
       core.debug(`Actor: ${this.buildActor}`)
@@ -77,6 +82,7 @@ class Deployment {
           id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
           pending: true
         }
+        this.startTime = Date.now()
       }
 
       core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
@@ -125,11 +131,9 @@ class Deployment {
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
-    const timeout = Number(core.getInput('timeout'))
     const reportingInterval = Number(core.getInput('reporting_interval'))
     const maxErrorCount = Number(core.getInput('error_count'))
 
-    let startTime = Date.now()
     let errorCount = 0
 
     // Time in milliseconds between two deployment status report when status errored, default 0.
@@ -139,6 +143,16 @@ class Deployment {
 
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
     while (true) {
+      // Handle timeout
+      if (Date.now() - this.startTime >= this.timeout) {
+        core.error('Timeout reached, aborting!')
+        core.setFailed('Timeout reached, aborting!')
+
+        // Explicitly cancel the deployment
+        await this.cancel()
+        return
+      }
+
       // Handle reporting interval
       await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
@@ -190,16 +204,6 @@ class Deployment {
       if (errorCount >= maxErrorCount) {
         core.error('Too many errors, aborting!')
         core.setFailed('Failed with status code: ' + errorStatus)
-
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
-      }
-
-      // Handle timeout
-      if (Date.now() - startTime >= timeout) {
-        core.error('Timeout reached, aborting!')
-        core.setFailed('Timeout reached, aborting!')
 
         // Explicitly cancel the deployment
         await this.cancel()
