@@ -23,7 +23,7 @@ const finalErrorStatus = {
   deployment_lost: 'Deployment failed to report final status.'
 }
 
-const maxTimeout = 600000
+const MAX_TIMEOUT = 600000
 
 class Deployment {
   constructor() {
@@ -41,21 +41,21 @@ class Deployment {
     this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
-    this.timeout = maxTimeout
+    this.timeout = MAX_TIMEOUT
     this.startTime = null
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
-    if (Number(core.getInput('timeout')) > maxTimeout) {
+    if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
       core.warning(
-        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${maxTimeout} milliseconds.`
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
       )
     }
 
-    let timeoutInput = Number(core.getInput('timeout'))
-    this.timeout = (!timeoutInput || timeoutInput <= 0) ? maxTimeout : Math.min(timeoutInput, maxTimeout)
+    const TIMEOUT_INPUT = Number(core.getInput('timeout'))
+    this.timeout = !TIMEOUT_INPUT || TIMEOUT_INPUT <= 0 ? MAX_TIMEOUT : Math.min(TIMEOUT_INPUT, MAX_TIMEOUT)
 
     try {
       core.debug(`Actor: ${this.buildActor}`)
@@ -143,16 +143,6 @@ class Deployment {
 
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
     while (true) {
-      // Handle timeout
-      if (Date.now() - this.startTime >= this.timeout) {
-        core.error('Timeout reached, aborting!')
-        core.setFailed('Timeout reached, aborting!')
-
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
-      }
-
       // Handle reporting interval
       await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
@@ -209,6 +199,16 @@ class Deployment {
         await this.cancel()
         return
       }
+
+      // Handle timeout
+      if (Date.now() - this.startTime >= this.timeout) {
+        core.error('Timeout reached, aborting!')
+        core.setFailed('Timeout reached, aborting!')
+
+        // Explicitly cancel the deployment
+        await this.cancel()
+        return
+      }
     }
   }
 
@@ -238,4 +238,4 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment, maxTimeout }
+module.exports = { Deployment, MAX_TIMEOUT }

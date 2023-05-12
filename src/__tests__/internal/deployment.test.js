@@ -1,7 +1,7 @@
 const core = require('@actions/core')
 const nock = require('nock')
 
-const { Deployment, maxTimeout } = require('../../internal/deployment')
+const { Deployment, MAX_TIMEOUT } = require('../../internal/deployment')
 
 const fakeJwt =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
@@ -280,7 +280,7 @@ describe('Deployment', () => {
           case 'token':
             return process.env.GITHUB_TOKEN
           case 'timeout':
-            return maxTimeout + 1
+            return MAX_TIMEOUT + 1
           default:
             return process.env[`INPUT_${param.toUpperCase()}`] || ''
         }
@@ -290,7 +290,7 @@ describe('Deployment', () => {
       await deployment.create(fakeJwt)
 
       expect(core.warning).toBeCalledWith(
-        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${maxTimeout} milliseconds.`
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
       )
 
       artifactExchangeScope.done()
@@ -421,15 +421,17 @@ describe('Deployment', () => {
             return 'github-pages'
           case 'token':
             return process.env.GITHUB_TOKEN
+          case 'error_count':
+            return 10
           case 'timeout':
-            return maxTimeout + 1
+            return MAX_TIMEOUT + 1
           default:
             return process.env[`INPUT_${param.toUpperCase()}`] || ''
         }
       })
 
       const now = Date.now()
-      const mockStartTime = now - maxTimeout
+      const mockStartTime = now - MAX_TIMEOUT
       jest
         .spyOn(Date, 'now')
         .mockImplementationOnce(() => mockStartTime)
@@ -440,7 +442,7 @@ describe('Deployment', () => {
       await deployment.create(fakeJwt)
       await deployment.check()
 
-      expect(deployment.timeout).toEqual(maxTimeout)
+      expect(deployment.timeout).toEqual(MAX_TIMEOUT)
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
       expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
 
@@ -485,6 +487,8 @@ describe('Deployment', () => {
             return 'github-pages'
           case 'token':
             return process.env.GITHUB_TOKEN
+          case 'error_count':
+            return 10
           case 'timeout':
             return 42
           default:
@@ -551,6 +555,8 @@ describe('Deployment', () => {
             return 'github-pages'
           case 'token':
             return process.env.GITHUB_TOKEN
+          case 'error_count':
+            return 10
           case 'timeout':
             return 42
           default:
