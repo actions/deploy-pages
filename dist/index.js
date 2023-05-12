@@ -10054,8 +10054,8 @@ class Deployment {
       )
     }
 
-    const TIMEOUT_INPUT = Number(core.getInput('timeout'))
-    this.timeout = !TIMEOUT_INPUT || TIMEOUT_INPUT <= 0 ? MAX_TIMEOUT : Math.min(TIMEOUT_INPUT, MAX_TIMEOUT)
+    const timeoutInput = Number(core.getInput('timeout'))
+    this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
 
     try {
       core.debug(`Actor: ${this.buildActor}`)
