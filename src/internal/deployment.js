@@ -55,7 +55,7 @@ class Deployment {
     }
 
     let timeoutInput = Number(core.getInput('timeout'))
-    this.timeout = timeoutInput <= 0 ? maxTimeout : Math.min(timeoutInput, maxTimeout)
+    this.timeout = (!timeoutInput || timeoutInput <= 0) ? maxTimeout : Math.min(timeoutInput, maxTimeout)
 
     try {
       core.debug(`Actor: ${this.buildActor}`)
