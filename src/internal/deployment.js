@@ -143,6 +143,16 @@ class Deployment {
 
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
     while (true) {
+      // Handle timeout
+      if (Date.now() - this.startTime >= this.timeout) {
+        core.error('Timeout reached, aborting!')
+        core.setFailed('Timeout reached, aborting!')
+
+        // Explicitly cancel the deployment
+        await this.cancel()
+        return
+      }
+
       // Handle reporting interval
       await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
@@ -191,19 +201,9 @@ class Deployment {
         }
       }
 
-      if (errorCount > maxErrorCount) {
+      if (errorCount >= maxErrorCount) {
         core.error('Too many errors, aborting!')
         core.setFailed('Failed with status code: ' + errorStatus)
-
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
-      }
-
-      // Handle timeout
-      if (Date.now() - this.startTime >= this.timeout) {
-        core.error('Timeout reached, aborting!')
-        core.setFailed('Timeout reached, aborting!')
 
         // Explicitly cancel the deployment
         await this.cancel()
