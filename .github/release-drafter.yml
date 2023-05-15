@@ -6,7 +6,11 @@ template: |
 
   $CHANGES
 
+  ---
+
   See details of [all code changes](https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION) since previous release.
+
+  :warning: For use with products other than GitHub.com, such as GitHub Enterprise Server, please consult the [compatibility table](https://github.com/$OWNER/$REPOSITORY/#compatibilty).
 categories:
   - title: '🚀 Features'
     labels:
