@@ -92,6 +92,11 @@ class Deployment {
         } else if (error.status === 404) {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
           errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
+          // If using GHES, add a special note about compatibility
+          if (new URL(this.githubServerUrl).hostname.toLowerCase() !== 'github.com') {
+            errorMessage +=
+              '.\nNote: This action version may not yet support GitHub Enterprise Server, please check the compatibility table.'
+          }
         } else if (error.status >= 500) {
           errorMessage +=
             'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
