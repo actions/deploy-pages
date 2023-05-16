@@ -87,6 +87,21 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we will configure it by default for you).
 
+## Compatibility
+
+This action is primarily design for use with GitHub.com's Actions workflows and Pages deployments. However, certain releases should also be compatible with GitHub Enterprise Server (GHES) `3.7` and above.
+
+| Release | GHES Compatibility |
+|:---|:---|
+| [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
+| [`v2.0.1`](https://github.com/actions/deploy-pages/releases/tag/v2.0.1) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
+| [`v2.0.0`](https://github.com/actions/deploy-pages/releases/tag/v2.0.0) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
+| [`v1`](https://github.com/actions/deploy-pages/releases/tag/v1) | `>= 3.7` |
+| [`v1.2.8`](https://github.com/actions/deploy-pages/releases/tag/v1.2.8) | `>= 3.7` |
+| [`v1.2.7`](https://github.com/actions/deploy-pages/releases/tag/v1.2.7) | :warning: [Incompatible](https://github.com/actions/deploy-pages/issues/137). Anticipating compatibility with `>= 3.9`. |
+| [`v1.2.6`](https://github.com/actions/deploy-pages/releases/tag/v1.2.6) | `>= 3.7` |
+| `v1.x.x` | `>= 3.7` |
+
 ## Release Instructions
 
 In order to release a new version of this Action:
