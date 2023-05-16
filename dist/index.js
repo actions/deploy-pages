@@ -10095,7 +10095,7 @@ class Deployment {
           // If using GHES, add a special note about compatibility
           if (new URL(this.githubServerUrl).hostname.toLowerCase() !== 'github.com') {
             errorMessage +=
-              '.\nNote: This action version may not yet support GitHub Enterprise Server, please check the compatibility table.'
+              '\nNote: This action version may not yet support GitHub Enterprise Server, please check the compatibility table.'
           }
         } else if (error.status >= 500) {
           errorMessage +=
