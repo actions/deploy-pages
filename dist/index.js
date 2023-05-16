@@ -10023,6 +10023,8 @@ const finalErrorStatus = {
   deployment_lost: 'Deployment failed to report final status.'
 }
 
+const MAX_TIMEOUT = 600000
+
 class Deployment {
   constructor() {
     const context = getContext()
@@ -10039,11 +10041,22 @@ class Deployment {
     this.githubServerUrl = context.githubServerUrl
     this.artifactName = context.artifactName
     this.isPreview = context.isPreview === true
+    this.timeout = MAX_TIMEOUT
+    this.startTime = null
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
+    if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
+      core.warning(
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
+      )
+    }
+
+    const timeoutInput = Number(core.getInput('timeout'))
+    this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
+
     try {
       core.debug(`Actor: ${this.buildActor}`)
       core.debug(`Action ID: ${this.actionsId}`)
@@ -10069,6 +10082,7 @@ class Deployment {
           id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
           pending: true
         }
+        this.startTime = Date.now()
       }
 
       core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
@@ -10122,11 +10136,9 @@ class Deployment {
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
-    const timeout = Number(core.getInput('timeout'))
     const reportingInterval = Number(core.getInput('reporting_interval'))
     const maxErrorCount = Number(core.getInput('error_count'))
 
-    let startTime = Date.now()
     let errorCount = 0
 
     // Time in milliseconds between two deployment status report when status errored, default 0.
@@ -10194,7 +10206,7 @@ class Deployment {
       }
 
       // Handle timeout
-      if (Date.now() - startTime >= timeout) {
+      if (Date.now() - this.startTime >= this.timeout) {
         core.error('Timeout reached, aborting!')
         core.setFailed('Timeout reached, aborting!')
 
@@ -10231,7 +10243,7 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment }
+module.exports = { Deployment, MAX_TIMEOUT }
 
 
 /***/ }),
