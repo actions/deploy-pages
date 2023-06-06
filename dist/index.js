@@ -9886,7 +9886,7 @@ async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifact
 
   const artifactSize = artifact?.size
   if (!artifactSize) {
-    core.warning('Artifact size was not found. Can not check if artifact size exceeds the allowed size.')
+    core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
   }
 
   return {
