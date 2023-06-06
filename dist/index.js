@@ -9840,7 +9840,7 @@ async function processRuntimeResponse(res, requestOptions) {
   return response
 }
 
-async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
+async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifactName }) {
   const { runTimeUrl: RUNTIME_URL } = getContext()
   const artifactExchangeUrl = `${RUNTIME_URL}_apis/pipelines/workflows/${workflowRunId}/artifacts?api-version=6.0-preview`
 
@@ -9874,7 +9874,8 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
     throw error
   }
 
-  const artifactRawUrl = data?.value?.find(artifact => artifact.name === artifactName)?.url
+  const artifact = data?.value?.find(artifact => artifact.name === artifactName)
+  const artifactRawUrl = artifact?.url
   if (!artifactRawUrl) {
     throw new Error(
       'No uploaded artifact was found! Please check if there are any errors at build step, or uploaded artifact name is correct.'
@@ -9882,7 +9883,16 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
   }
 
   const signedArtifactUrl = `${artifactRawUrl}&%24expand=SignedContent`
-  return signedArtifactUrl
+
+  const artifactSize = artifact?.size
+  if (!artifactSize) {
+    core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
+  }
+
+  return {
+    url: signedArtifactUrl,
+    size: artifactSize
+  }
 }
 
 async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
@@ -9949,7 +9959,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 }
 
 module.exports = {
-  getSignedArtifactUrl,
+  getSignedArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -10003,7 +10013,7 @@ const core = __nccwpck_require__(2186)
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(8454)
 const {
-  getSignedArtifactUrl,
+  getSignedArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -10024,6 +10034,8 @@ const finalErrorStatus = {
 }
 
 const MAX_TIMEOUT = 600000
+const ONE_GIGABYTE = 1073741824
+const SIZE_LIMIT_DESCRIPTION = '1 GB'
 
 class Deployment {
   constructor() {
@@ -10062,15 +10074,21 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactUrl = await getSignedArtifactUrl({
+      const artifactData = await getSignedArtifactMetadata({
         runtimeToken: this.runTimeToken,
         workflowRunId: this.workflowRun,
         artifactName: this.artifactName
       })
 
+      if (artifactData?.size > ONE_GIGABYTE) {
+        core.warning(
+          `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
+        )
+      }
+
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactUrl,
+        artifactUrl: artifactData.url,
         buildVersion: this.buildVersion,
         idToken,
         isPreview: this.isPreview
@@ -10243,7 +10261,7 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment, MAX_TIMEOUT }
+module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }
 
 
 /***/ }),

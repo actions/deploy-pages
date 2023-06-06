@@ -3,7 +3,7 @@ const core = require('@actions/core')
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
 const {
-  getSignedArtifactUrl,
+  getSignedArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -24,6 +24,8 @@ const finalErrorStatus = {
 }
 
 const MAX_TIMEOUT = 600000
+const ONE_GIGABYTE = 1073741824
+const SIZE_LIMIT_DESCRIPTION = '1 GB'
 
 class Deployment {
   constructor() {
@@ -62,15 +64,21 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactUrl = await getSignedArtifactUrl({
+      const artifactData = await getSignedArtifactMetadata({
         runtimeToken: this.runTimeToken,
         workflowRunId: this.workflowRun,
         artifactName: this.artifactName
       })
 
+      if (artifactData?.size > ONE_GIGABYTE) {
+        core.warning(
+          `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
+        )
+      }
+
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactUrl,
+        artifactUrl: artifactData.url,
         buildVersion: this.buildVersion,
         idToken,
         isPreview: this.isPreview
@@ -243,4 +251,4 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment, MAX_TIMEOUT }
+module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }

@@ -54,7 +54,7 @@ async function processRuntimeResponse(res, requestOptions) {
   return response
 }
 
-async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName }) {
+async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifactName }) {
   const { runTimeUrl: RUNTIME_URL } = getContext()
   const artifactExchangeUrl = `${RUNTIME_URL}_apis/pipelines/workflows/${workflowRunId}/artifacts?api-version=6.0-preview`
 
@@ -88,7 +88,8 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
     throw error
   }
 
-  const artifactRawUrl = data?.value?.find(artifact => artifact.name === artifactName)?.url
+  const artifact = data?.value?.find(artifact => artifact.name === artifactName)
+  const artifactRawUrl = artifact?.url
   if (!artifactRawUrl) {
     throw new Error(
       'No uploaded artifact was found! Please check if there are any errors at build step, or uploaded artifact name is correct.'
@@ -96,7 +97,16 @@ async function getSignedArtifactUrl({ runtimeToken, workflowRunId, artifactName 
   }
 
   const signedArtifactUrl = `${artifactRawUrl}&%24expand=SignedContent`
-  return signedArtifactUrl
+
+  const artifactSize = artifact?.size
+  if (!artifactSize) {
+    core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
+  }
+
+  return {
+    url: signedArtifactUrl,
+    size: artifactSize
+  }
 }
 
 async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
@@ -163,7 +173,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 }
 
 module.exports = {
-  getSignedArtifactUrl,
+  getSignedArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
