@@ -10056,18 +10056,19 @@ class Deployment {
     this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
 
     const maxErrorCountInput = Number(core.getInput('error_count'))
-    if (maxErrorCountInput <= 0) {
+    if (!maxErrorCountInput || maxErrorCountInput <= 0) {
       core.warning('Invalid error_count value will be ignored. Please ensure the value is a positive integer.')
+    } else {
+      this.maxErrorCount = maxErrorCountInput
     }
-    this.maxErrorCount = !maxErrorCountInput || maxErrorCountInput <= 0 ? null : maxErrorCountInput
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
-    this.setOptionalUserInput()
-
     try {
+      this.setOptionalUserInput()
+
       core.debug(`Actor: ${this.buildActor}`)
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
