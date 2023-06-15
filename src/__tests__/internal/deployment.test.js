@@ -44,6 +44,101 @@ describe('Deployment', () => {
     jest.spyOn(core, 'debug').mockImplementation(jest.fn())
   })
 
+  describe('#setOptionalUserInput', () => {
+    it('warns when the timeout is greater than the maximum allowed', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'timeout':
+            return MAX_TIMEOUT + 1
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput()
+
+      expect(deployment.timeout).toBe(MAX_TIMEOUT)
+      expect(core.warning).toBeCalledWith(
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
+      )
+    })
+
+    it('sets the error_count input when valid', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'error_count':
+            return '1'
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      // Create the deployment
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput()
+
+      expect(deployment.maxErrorCount).toBe(1)
+    })
+
+    it('sets the error_count input to null if zero and warns user', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'error_count':
+            return '0'
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput()
+
+      expect(deployment.maxErrorCount).toBe(null)
+      expect(core.warning).toHaveBeenCalledWith(
+        'Invalid error_count value will be ignored. Please ensure the value is a positive integer.'
+      )
+    })
+
+    it('sets the error_count input to null if negative and warns user', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'error_count':
+            return '-1'
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput()
+
+      expect(deployment.maxErrorCount).toBe(null)
+      expect(core.warning).toHaveBeenCalledWith(
+        'Invalid error_count value will be ignored. Please ensure the value is a positive integer.'
+      )
+    })
+
+    it('sets the error_count input to null if not a number and warns user', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation(param => {
+        switch (param) {
+          case 'error_count':
+            return 'not a number'
+          default:
+            return process.env[`INPUT_${param.toUpperCase()}`] || ''
+        }
+      })
+
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput()
+
+      expect(deployment.maxErrorCount).toBe(null)
+      expect(core.warning).toHaveBeenCalledWith(
+        'Invalid error_count value will be ignored. Please ensure the value is a positive integer.'
+      )
+    })
+  })
+
   describe('#create', () => {
     afterEach(() => {
       // Remove mock for `core.getInput('preview')`
@@ -83,6 +178,42 @@ describe('Deployment', () => {
       expect(core.info).toHaveBeenLastCalledWith(
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+    })
+
+    it('invokes #setOptionalUserInput', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, {
+          value: [
+            { url: 'https://another-artifact.com', name: 'another-artifact' },
+            { url: 'https://fake-artifact.com', name: 'github-pages' }
+          ]
+        })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA,
+          oidc_token: fakeJwt
+        })
+        .reply(200, {
+          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          page_url: 'https://actions.github.io/is-awesome'
+        })
+
+      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
+
+      // Create the deployment
+      const deployment = new Deployment()
+      deployment.setOptionalUserInput = jest.fn()
+      await deployment.create(fakeJwt)
+
+      expect(deployment.setOptionalUserInput).toHaveBeenCalled()
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
@@ -242,152 +373,6 @@ describe('Deployment', () => {
         new Error(
           `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
         )
-      )
-
-      artifactExchangeScope.done()
-      createDeploymentScope.done()
-    })
-
-    it('warns when the timeout is greater than the maximum allowed', async () => {
-      process.env.GITHUB_SHA = 'valid-build-version'
-
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
-        })
-
-      const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
-          pages_build_version: process.env.GITHUB_SHA,
-          oidc_token: fakeJwt
-        })
-        .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
-          page_url: 'https://actions.github.io/is-awesome'
-        })
-
-      core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
-
-      jest.spyOn(core, 'getInput').mockImplementation(param => {
-        switch (param) {
-          case 'artifact_name':
-            return 'github-pages'
-          case 'token':
-            return process.env.GITHUB_TOKEN
-          case 'timeout':
-            return MAX_TIMEOUT + 1
-          default:
-            return process.env[`INPUT_${param.toUpperCase()}`] || ''
-        }
-      })
-
-      const deployment = new Deployment()
-      await deployment.create(fakeJwt)
-
-      expect(core.warning).toBeCalledWith(
-        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
-      )
-
-      artifactExchangeScope.done()
-      createDeploymentScope.done()
-    })
-
-    it('sets the error_count input when valid', async () => {
-      process.env.GITHUB_SHA = 'valid-build-version'
-
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
-        })
-
-      const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
-          pages_build_version: process.env.GITHUB_SHA,
-          oidc_token: fakeJwt
-        })
-        .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
-          page_url: 'https://actions.github.io/is-awesome'
-        })
-
-      // Set timeout to great than max
-      jest.spyOn(core, 'getInput').mockImplementation(param => {
-        switch (param) {
-          case 'artifact_name':
-            return 'github-pages'
-          case 'token':
-            return process.env.GITHUB_TOKEN
-          case 'error_count':
-            return 1
-          default:
-            return process.env[`INPUT_${param.toUpperCase()}`] || ''
-        }
-      })
-
-      // Create the deployment
-      const deployment = new Deployment()
-      await deployment.create(fakeJwt)
-
-      expect((deployment.maxErrorCount = 1))
-
-      artifactExchangeScope.done()
-      createDeploymentScope.done()
-    })
-
-    it('sets the error_count input to null if invalid and warns user', async () => {
-      process.env.GITHUB_SHA = 'valid-build-version'
-
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
-        })
-
-      const createDeploymentScope = nock('https://api.github.com')
-        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
-          pages_build_version: process.env.GITHUB_SHA,
-          oidc_token: fakeJwt
-        })
-        .reply(200, {
-          status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
-          page_url: 'https://actions.github.io/is-awesome'
-        })
-
-      // Set timeout to great than max
-      jest.spyOn(core, 'getInput').mockImplementation(param => {
-        switch (param) {
-          case 'artifact_name':
-            return 'github-pages'
-          case 'token':
-            return process.env.GITHUB_TOKEN
-          case 'error_count':
-            return -1
-          default:
-            return process.env[`INPUT_${param.toUpperCase()}`] || ''
-        }
-      })
-
-      // Create the deployment
-      const deployment = new Deployment()
-      await deployment.create(fakeJwt)
-
-      expect((deployment.maxErrorCount = null))
-      expect(core.warning).toHaveBeenCalledWith(
-        'Invalid error_count value will be ignored. Please ensure the value is a positive integer.'
       )
 
       artifactExchangeScope.done()
