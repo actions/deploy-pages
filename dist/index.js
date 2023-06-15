@@ -10080,21 +10080,32 @@ class Deployment {
     this.isPreview = context.isPreview === true
     this.timeout = MAX_TIMEOUT
     this.startTime = null
+    this.maxErrorCount = null
+  }
+
+  setOptionalUserInput() {
+    const timeoutInput = Number(core.getInput('timeout'))
+    if (timeoutInput > MAX_TIMEOUT) {
+      core.warning(
+        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
+      )
+    }
+    this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
+
+    const maxErrorCountInput = Number(core.getInput('error_count'))
+    if (!maxErrorCountInput || maxErrorCountInput <= 0) {
+      core.warning('Invalid error_count value will be ignored. Please ensure the value is a positive integer.')
+    } else {
+      this.maxErrorCount = maxErrorCountInput
+    }
   }
 
   // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
-    if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
-      core.warning(
-        `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
-      )
-    }
-
-    const timeoutInput = Number(core.getInput('timeout'))
-    this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
-
     try {
+      this.setOptionalUserInput()
+
       core.debug(`Actor: ${this.buildActor}`)
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
@@ -10180,7 +10191,6 @@ class Deployment {
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
     const reportingInterval = Number(core.getInput('reporting_interval'))
-    const maxErrorCount = Number(core.getInput('error_count'))
 
     let errorCount = 0
 
@@ -10239,7 +10249,7 @@ class Deployment {
         }
       }
 
-      if (errorCount >= maxErrorCount) {
+      if (errorCount >= this.maxErrorCount) {
         core.error('Too many errors, aborting!')
         core.setFailed('Failed with status code: ' + errorStatus)
 
