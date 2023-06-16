@@ -10052,7 +10052,7 @@ const temporaryErrorStatus = {
 
 const finalErrorStatus = {
   deployment_failed: 'Deployment failed, try again later.',
-  deployment_perms_error: 'Deployment failed, Please ensure that the file permissions are correct.',
+  deployment_perms_error: 'Deployment failed, please ensure that the file permissions are correct.',
   deployment_content_failed:
     'Artifact could not be deployed. Please ensure the content does not contain any hard links, symlinks and total size is less than 10GB.',
   deployment_cancelled: 'Deployment cancelled.',
