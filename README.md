@@ -93,12 +93,11 @@ This action is primarily design for use with GitHub.com's Actions workflows and 
 
 | Release | GHES Compatibility |
 |:---|:---|
-| [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
-| [`v2.0.1`](https://github.com/actions/deploy-pages/releases/tag/v2.0.1) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
-| [`v2.0.0`](https://github.com/actions/deploy-pages/releases/tag/v2.0.0) | 🛑 Incompatible. Anticipating compatibility with `>= 3.9`. |
+| [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | `>= 3.9` |
+| `v2.x.x` | `>= 3.9` |
 | [`v1`](https://github.com/actions/deploy-pages/releases/tag/v1) | `>= 3.7` |
 | [`v1.2.8`](https://github.com/actions/deploy-pages/releases/tag/v1.2.8) | `>= 3.7` |
-| [`v1.2.7`](https://github.com/actions/deploy-pages/releases/tag/v1.2.7) | :warning: [Incompatible](https://github.com/actions/deploy-pages/issues/137). Anticipating compatibility with `>= 3.9`. |
+| [`v1.2.7`](https://github.com/actions/deploy-pages/releases/tag/v1.2.7) | :warning: `>= 3.9` [Incompatible with prior versions!](https://github.com/actions/deploy-pages/issues/137) |
 | [`v1.2.6`](https://github.com/actions/deploy-pages/releases/tag/v1.2.6) | `>= 3.7` |
 | `v1.x.x` | `>= 3.7` |
 
