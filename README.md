@@ -6,11 +6,11 @@ This action is used to deploy [Actions artifacts][artifacts] to [GitHub Pages](h
 
 ## Usage
 
-See [action.yml](action.yml) for the various `inputs` this action supports.
+See [action.yml](action.yml) for the various `inputs` this action supports (or [below](#inputs-📥)).
 
 For examples that make use of this action, check out our [starter-workflows][starter-workflows] in a variety of frameworks.
 
-This action expects an artifact named `github-pages` to have been created prior to execution. This is done automatically when using [`actions/upload-pages-artifact`][upload-pages-artifact].
+This action deploys a Pages site previously uploaded as an artifact (e.g. using [`actions/upload-pages-artifact`][upload-pages-artifact]).
 
 We recommend this action to be used in a dedicated job:
 
@@ -75,7 +75,7 @@ jobs:
 
 There are a few important considerations to be aware of:
 
-1. The artifact being deployed must have been uploaded in a previous step, either in the same job or a separate job that doesn't execute until the upload is complete.
+1. The artifact being deployed must have been uploaded in a previous step, either in the same job or a separate job that doesn't execute until the upload is complete. See [`actions/upload-pages-artifact`][upload-pages-artifact] for more information about the format of the artifact we expect.
 
 2. The job that executes the deployment must at minimum have the following permissions:
    - `pages: write`
