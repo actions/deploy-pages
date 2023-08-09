@@ -10080,9 +10080,6 @@ class Deployment {
     } catch (error) {
       core.error(error.stack)
 
-      // output raw error in debug mode.
-      core.debug(JSON.stringify(error))
-
       // build customized error message based on server response
       if (error.response) {
         let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}. `
@@ -10162,9 +10159,6 @@ class Deployment {
         errorReportingInterval = 0
       } catch (error) {
         core.error(error.stack)
-
-        // output raw error in debug mode.
-        core.debug(JSON.stringify(error))
 
         // build customized error message based on server response
         if (error.response) {
