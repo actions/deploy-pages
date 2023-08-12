@@ -10286,6 +10286,17 @@ module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION
 
 /***/ }),
 
+/***/ 4880:
+/***/ ((module) => {
+
+module.exports = {
+  id: 'PAGES_DEPLOYMENT_ID',
+  isPending: 'PAGES_DEPLOYMENT_PENDING'
+}
+
+
+/***/ }),
+
 /***/ 2877:
 /***/ ((module) => {
 
@@ -10471,11 +10482,20 @@ const core = __nccwpck_require__(2186)
 
 const { Deployment } = __nccwpck_require__(2634)
 const getContext = __nccwpck_require__(8454)
+const stateKeys = __nccwpck_require__(4880)
+
+function storeIsPending(isPending) {
+  core.saveState(stateKeys.isPending, isPending === true ? 'true' : 'false')
+}
 
 const deployment = new Deployment()
 
 async function cancelHandler(evtOrExitCodeOrError) {
   await deployment.cancel()
+
+  // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+  storeIsPending(deployment.deploymentInfo?.pending)
+
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 
@@ -10494,6 +10514,13 @@ async function main() {
   try {
     const deploymentInfo = await deployment.create(idToken)
 
+    // Store the deployment ID and pending status for potential cleanup if the workflow run gets cancelled or fails
+    const deploymentId = deployment?.deploymentInfo?.id
+    if (deploymentId) {
+      core.saveState(stateKeys.id, deploymentId)
+      storeIsPending(deployment.deploymentInfo?.pending)
+    }
+
     // Output the deployed Pages URL
     let pageUrl = deploymentInfo?.['page_url'] || ''
     const previewUrl = deploymentInfo?.['preview_url'] || ''
@@ -10505,6 +10532,9 @@ async function main() {
     await deployment.check()
   } catch (error) {
     core.setFailed(error)
+  } finally {
+    // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+    storeIsPending(deployment.deploymentInfo?.pending)
   }
 }
 

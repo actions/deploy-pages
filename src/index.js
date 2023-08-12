@@ -6,11 +6,20 @@ const core = require('@actions/core')
 
 const { Deployment } = require('./internal/deployment')
 const getContext = require('./internal/context')
+const stateKeys = require('./internal/state-keys')
+
+function storeIsPending(isPending) {
+  core.saveState(stateKeys.isPending, isPending === true ? 'true' : 'false')
+}
 
 const deployment = new Deployment()
 
 async function cancelHandler(evtOrExitCodeOrError) {
   await deployment.cancel()
+
+  // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+  storeIsPending(deployment.deploymentInfo?.pending)
+
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 
@@ -29,6 +38,13 @@ async function main() {
   try {
     const deploymentInfo = await deployment.create(idToken)
 
+    // Store the deployment ID and pending status for potential cleanup if the workflow run gets cancelled or fails
+    const deploymentId = deployment?.deploymentInfo?.id
+    if (deploymentId) {
+      core.saveState(stateKeys.id, deploymentId)
+      storeIsPending(deployment.deploymentInfo?.pending)
+    }
+
     // Output the deployed Pages URL
     let pageUrl = deploymentInfo?.['page_url'] || ''
     const previewUrl = deploymentInfo?.['preview_url'] || ''
@@ -40,6 +56,9 @@ async function main() {
     await deployment.check()
   } catch (error) {
     core.setFailed(error)
+  } finally {
+    // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+    storeIsPending(deployment.deploymentInfo?.pending)
   }
 }
 
