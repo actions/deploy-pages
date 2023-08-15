@@ -133,12 +133,10 @@ class Deployment {
   async check() {
     // Don't attempt to check status if no deployment was created
     if (!this.deploymentInfo) {
-      core.setFailed(temporaryErrorStatus.not_found)
-      return
+      throw new Error(temporaryErrorStatus.not_found)
     }
     if (this.deploymentInfo.pending !== true) {
-      core.setFailed(temporaryErrorStatus.unknown_status)
-      return
+      throw new Error(temporaryErrorStatus.unknown_status)
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
@@ -151,9 +149,10 @@ class Deployment {
     let errorReportingInterval = 0
     let deployment = null
     let errorStatus = 0
+    let unretriableErrorMsg = null
 
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
-    while (true) {
+    while (unretriableErrorMsg == null) {
       // Handle reporting interval
       await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
@@ -171,9 +170,8 @@ class Deployment {
           break
         } else if (finalErrorStatus[deployment.status]) {
           // Fall into permanent error, it may be caused by ongoing incident, malicious deployment content, exhausted automatic retry times, invalid artifact, etc.
-          core.setFailed(finalErrorStatus[deployment.status])
           this.deploymentInfo.pending = false
-          break
+          unretriableErrorMsg = finalErrorStatus[deployment.status]
         } else if (temporaryErrorStatus[deployment.status]) {
           // A temporary error happened, will query the status again
           core.warning(temporaryErrorStatus[deployment.status])
@@ -199,23 +197,36 @@ class Deployment {
         }
       }
 
+      // If a permanent error happened, throw the error and exit the loop
+      if (unretriableErrorMsg != null) {
+        throw new Error(unretriableErrorMsg)
+      }
+
       if (errorCount >= maxErrorCount) {
         core.error('Too many errors, aborting!')
-        core.setFailed('Failed with status code: ' + errorStatus)
 
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
+        try {
+          // Explicitly cancel the deployment
+          await this.cancel()
+        } catch (error) {
+          core.warning(`Failed to cancel deployment ${deploymentId}: ${error.message}`)
+        }
+
+        throw new Error(`Failed with status code: ${errorStatus}`)
       }
 
       // Handle timeout
       if (Date.now() - this.startTime >= this.timeout) {
         core.error('Timeout reached, aborting!')
-        core.setFailed('Timeout reached, aborting!')
 
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
+        try {
+          // Explicitly cancel the deployment
+          await this.cancel()
+        } catch (error) {
+          core.warning(`Failed to cancel deployment ${deploymentId}: ${error.message}`)
+        }
+
+        throw new Error('Timeout reached, aborting!')
       }
     }
   }
@@ -238,10 +249,13 @@ class Deployment {
 
       this.deploymentInfo.pending = false
     } catch (error) {
-      core.setFailed(error)
+      core.error(error.stack)
+
       if (error.response?.data) {
         core.error(JSON.stringify(error.response.data))
       }
+
+      throw new Error(`Canceling Pages deployment failed: ${error.message}`)
     }
   }
 }
