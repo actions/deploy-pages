@@ -223,6 +223,33 @@ describe('Deployment', () => {
       createDeploymentScope.done()
     })
 
+    it('reports errors with an unexpected 404 during deployment including GHES compatibility note', async () => {
+      const ghesOrigin = 'https://github.mycompany.com'
+      process.env.GITHUB_SERVER_URL = ghesOrigin
+      process.env.GITHUB_SHA = 'build-version'
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA
+        })
+        .reply(404, { message: 'Not found' })
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await expect(deployment.create()).rejects.toEqual(
+        new Error(
+          `Failed to create deployment (status: 404) with build version ${process.env.GITHUB_SHA}. Ensure GitHub Pages has been enabled: ${ghesOrigin}/actions/is-awesome/settings/pages\nNote: This action version may not yet support GitHub Enterprise Server, please check the compatibility table.`
+        )
+      )
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+    })
+
     it('reports errors with failed deployments', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
       const artifactExchangeScope = nock(`http://my-url`)
