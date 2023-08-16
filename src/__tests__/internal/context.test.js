@@ -1,3 +1,4 @@
+const core = require('@actions/core')
 const getContext = require('../../internal/context')
 
 describe('getContext', () => {
@@ -11,6 +12,9 @@ describe('getContext', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
+
+    // Mock debug
+    jest.spyOn(core, 'debug').mockImplementation(jest.fn())
   })
 
   it('succeeds with all environment variables set', () => {
@@ -29,6 +33,7 @@ describe('getContext', () => {
       runTimeUrl: 'http://my-url',
       workflowRun: '123'
     })
+    expect(core.debug).toHaveBeenCalledWith('all variables are set')
   })
 
   it('throws if there are missing variables', () => {
