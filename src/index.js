@@ -15,7 +15,11 @@ function storeIsPending(isPending) {
 const deployment = new Deployment()
 
 // async function cancelHandler(evtOrExitCodeOrError) {
-//   await deployment.cancel()
+//   try {
+//     await deployment.cancel()
+//   } catch (error) {
+//     core.warning(`Failed to cancel deployment ${deploymentId} in response to signal: ${error.message}`)
+//   }
 
 //   // Store pending status for potential cleanup if the workflow run gets cancelled or fails
 //   storeIsPending(deployment.deploymentInfo?.pending)
