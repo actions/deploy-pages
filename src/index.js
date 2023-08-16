@@ -18,7 +18,9 @@ async function cancelHandler(evtOrExitCodeOrError) {
   try {
     await deployment.cancel()
   } catch (error) {
-    core.warning(`Failed to cancel deployment ${deployment.deploymentInfo?.id} in response to interrupt signal: ${error.message}`)
+    core.warning(
+      `Failed to cancel deployment ${deployment.deploymentInfo?.id} in response to interrupt signal: ${error.message}`
+    )
   }
 
   // Store pending status for potential cleanup if the workflow run gets cancelled or fails
