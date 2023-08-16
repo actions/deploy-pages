@@ -663,7 +663,7 @@ describe('Deployment', () => {
       // Cancel it
       await deployment.cancel()
 
-      expect(core.info).toHaveBeenLastCalledWith(`Canceled deployment with ID ${process.env.GITHUB_SHA}`)
+      expect(core.info).toHaveBeenLastCalledWith(`Cancelled deployment with ID ${process.env.GITHUB_SHA}`)
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
@@ -719,7 +719,7 @@ describe('Deployment', () => {
       await deployment.create(fakeJwt)
 
       // Cancel it
-      await expect(deployment.cancel()).rejects.toThrow('Canceling Pages deployment failed: oh no')
+      await expect(deployment.cancel()).rejects.toThrow('Cancelling Pages deployment failed: oh no')
       expect(core.error).toHaveBeenCalled()
 
       artifactExchangeScope.done()

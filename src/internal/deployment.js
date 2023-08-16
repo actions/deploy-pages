@@ -245,7 +245,7 @@ class Deployment {
         githubToken: this.githubToken,
         deploymentId
       })
-      core.info(`Canceled deployment with ID ${deploymentId}`)
+      core.info(`Cancelled deployment with ID ${deploymentId}`)
 
       this.deploymentInfo.pending = false
     } catch (error) {
@@ -255,7 +255,7 @@ class Deployment {
         core.error(JSON.stringify(error.response.data))
       }
 
-      throw new Error(`Canceling Pages deployment failed: ${error.message}`)
+      throw new Error(`Cancelling Pages deployment failed: ${error.message}`)
     }
   }
 }

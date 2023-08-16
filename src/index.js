@@ -14,18 +14,18 @@ function storeIsPending(isPending) {
 
 const deployment = new Deployment()
 
-// async function cancelHandler(evtOrExitCodeOrError) {
-//   try {
-//     await deployment.cancel()
-//   } catch (error) {
-//     core.warning(`Failed to cancel deployment ${deploymentId} in response to signal: ${error.message}`)
-//   }
+async function cancelHandler(evtOrExitCodeOrError) {
+  try {
+    await deployment.cancel()
+  } catch (error) {
+    core.warning(`Failed to cancel deployment ${deployment.deploymentInfo?.id} in response to signal: ${error.message}`)
+  }
 
-//   // Store pending status for potential cleanup if the workflow run gets cancelled or fails
-//   storeIsPending(deployment.deploymentInfo?.pending)
+  // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+  storeIsPending(deployment.deploymentInfo?.pending)
 
-//   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
-// }
+  process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
+}
 
 async function main() {
   const { isPreview } = getContext()
@@ -67,8 +67,8 @@ async function main() {
 }
 
 // Register signal handlers for workflow cancellation
-// process.on('SIGINT', cancelHandler)
-// process.on('SIGTERM', cancelHandler)
+process.on('SIGINT', cancelHandler)
+process.on('SIGTERM', cancelHandler)
 
 // Main
 main()
