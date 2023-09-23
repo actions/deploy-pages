@@ -126,3 +126,4 @@ The scripts and documentation in this project are released under the [MIT Licens
 [draft-release]: .github/workflows/draft-release.yml
 [release]: .github/workflows/release.yml
 [release-workflow-runs]: https://github.com/actions/deploy-pages/actions/workflows/release.yml
+          https://github.com/actions/deploy-pages/issues/188#issuecomment-1629531844
