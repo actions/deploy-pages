@@ -67,10 +67,6 @@ jobs:
 | -------- | ----------- |
 | `GITHUB_PAGES` | This environment variable is created and set to the string value `"true"` so that framework build tools may choose to differentiate their output based on the intended target hosting platform. |
 
-## Scope
-
-⚠️ Official support for building Pages with Actions is in public beta at the moment.
-
 ## Security Considerations
 
 There are a few important considerations to be aware of:
