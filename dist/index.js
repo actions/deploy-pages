@@ -9968,7 +9968,7 @@ async function getPagesDeploymentStatus({ githubToken, deploymentId }) {
 async function cancelPagesDeployment({ githubToken, deploymentId }) {
   const octokit = github.getOctokit(githubToken)
 
-  core.info('Canceling Pages deployment...')
+  core.info('Cancelling Pages deployment...')
   try {
     const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments/{deploymentId}/cancel', {
       owner: github.context.repo.owner,
@@ -9978,7 +9978,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 
     return response.data
   } catch (error) {
-    core.error('Canceling Pages deployment failed', error)
+    core.error('Cancelling Pages deployment failed', error)
     throw error
   }
 }
@@ -10168,12 +10168,10 @@ class Deployment {
   async check() {
     // Don't attempt to check status if no deployment was created
     if (!this.deploymentInfo) {
-      core.setFailed(temporaryErrorStatus.not_found)
-      return
+      throw new Error(temporaryErrorStatus.not_found)
     }
     if (this.deploymentInfo.pending !== true) {
-      core.setFailed(temporaryErrorStatus.unknown_status)
-      return
+      throw new Error(temporaryErrorStatus.unknown_status)
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
@@ -10186,9 +10184,10 @@ class Deployment {
     let errorReportingInterval = 0
     let deployment = null
     let errorStatus = 0
+    let unretriableErrorMsg = null
 
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
-    while (true) {
+    while (unretriableErrorMsg == null) {
       // Handle reporting interval
       await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
 
@@ -10206,9 +10205,8 @@ class Deployment {
           break
         } else if (finalErrorStatus[deployment.status]) {
           // Fall into permanent error, it may be caused by ongoing incident, malicious deployment content, exhausted automatic retry times, invalid artifact, etc.
-          core.setFailed(finalErrorStatus[deployment.status])
           this.deploymentInfo.pending = false
-          break
+          unretriableErrorMsg = finalErrorStatus[deployment.status]
         } else if (temporaryErrorStatus[deployment.status]) {
           // A temporary error happened, will query the status again
           core.warning(temporaryErrorStatus[deployment.status])
@@ -10234,23 +10232,36 @@ class Deployment {
         }
       }
 
+      // If a permanent error happened, throw the error and exit the loop
+      if (unretriableErrorMsg != null) {
+        throw new Error(unretriableErrorMsg)
+      }
+
       if (errorCount >= maxErrorCount) {
         core.error('Too many errors, aborting!')
-        core.setFailed('Failed with status code: ' + errorStatus)
 
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
+        try {
+          // Explicitly cancel the deployment
+          await this.cancel()
+        } catch (error) {
+          core.warning(`Failed to cancel deployment ${deploymentId}: ${error.message}`)
+        }
+
+        throw new Error(`Failed with status code: ${errorStatus}`)
       }
 
       // Handle timeout
       if (Date.now() - this.startTime >= this.timeout) {
         core.error('Timeout reached, aborting!')
-        core.setFailed('Timeout reached, aborting!')
 
-        // Explicitly cancel the deployment
-        await this.cancel()
-        return
+        try {
+          // Explicitly cancel the deployment
+          await this.cancel()
+        } catch (error) {
+          core.warning(`Failed to cancel deployment ${deploymentId}: ${error.message}`)
+        }
+
+        throw new Error('Timeout reached, aborting!')
       }
     }
   }
@@ -10269,19 +10280,33 @@ class Deployment {
         githubToken: this.githubToken,
         deploymentId
       })
-      core.info(`Canceled deployment with ID ${deploymentId}`)
+      core.info(`Cancelled deployment with ID ${deploymentId}`)
 
       this.deploymentInfo.pending = false
     } catch (error) {
-      core.setFailed(error)
+      core.error(error.stack)
+
       if (error.response?.data) {
         core.error(JSON.stringify(error.response.data))
       }
+
+      throw new Error(`Cancelling Pages deployment failed: ${error.message}`)
     }
   }
 }
 
 module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }
+
+
+/***/ }),
+
+/***/ 4880:
+/***/ ((module) => {
+
+module.exports = {
+  id: 'PAGES_DEPLOYMENT_ID',
+  isPending: 'PAGES_DEPLOYMENT_PENDING'
+}
 
 
 /***/ }),
@@ -10471,11 +10496,26 @@ const core = __nccwpck_require__(2186)
 
 const { Deployment } = __nccwpck_require__(2634)
 const getContext = __nccwpck_require__(8454)
+const stateKeys = __nccwpck_require__(4880)
+
+function storeIsPending(isPending) {
+  core.saveState(stateKeys.isPending, isPending === true ? 'true' : 'false')
+}
 
 const deployment = new Deployment()
 
 async function cancelHandler(evtOrExitCodeOrError) {
-  await deployment.cancel()
+  try {
+    await deployment.cancel()
+  } catch (error) {
+    core.warning(
+      `Failed to cancel deployment ${deployment.deploymentInfo?.id} in response to interrupt signal: ${error.message}`
+    )
+  }
+
+  // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+  storeIsPending(deployment.deploymentInfo?.pending)
+
   process.exit(isNaN(+evtOrExitCodeOrError) ? 1 : +evtOrExitCodeOrError)
 }
 
@@ -10494,6 +10534,13 @@ async function main() {
   try {
     const deploymentInfo = await deployment.create(idToken)
 
+    // Store the deployment ID and pending status for potential cleanup if the workflow run gets cancelled or fails
+    const deploymentId = deployment?.deploymentInfo?.id
+    if (deploymentId) {
+      core.saveState(stateKeys.id, deploymentId)
+      storeIsPending(deployment.deploymentInfo?.pending)
+    }
+
     // Output the deployed Pages URL
     let pageUrl = deploymentInfo?.['page_url'] || ''
     const previewUrl = deploymentInfo?.['preview_url'] || ''
@@ -10505,6 +10552,9 @@ async function main() {
     await deployment.check()
   } catch (error) {
     core.setFailed(error)
+  } finally {
+    // Store pending status for potential cleanup if the workflow run gets cancelled or fails
+    storeIsPending(deployment.deploymentInfo?.pending)
   }
 }
 

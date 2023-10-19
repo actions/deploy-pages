@@ -4,6 +4,7 @@ author: 'GitHub'
 runs:
   using: 'node16'
   main: 'dist/index.js'
+  post: 'dist/cleanup/index.js'
 inputs:
   token:
     description: 'GitHub token'

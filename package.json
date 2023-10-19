@@ -27,7 +27,9 @@
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
-    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "prepare": "npm run prepare:main && npm run prepare:post",
+    "prepare:main": "ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "prepare:post": "ncc build src/cleanup.js -o dist/cleanup --source-map --license licenses.txt",
     "test": "jest"
   },
   "repository": {

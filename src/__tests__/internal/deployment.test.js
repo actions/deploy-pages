@@ -223,6 +223,33 @@ describe('Deployment', () => {
       createDeploymentScope.done()
     })
 
+    it('reports errors with an unexpected 404 during deployment including GHES compatibility note', async () => {
+      const ghesOrigin = 'https://github.mycompany.com'
+      process.env.GITHUB_SERVER_URL = ghesOrigin
+      process.env.GITHUB_SHA = 'build-version'
+      const artifactExchangeScope = nock(`http://my-url`)
+        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+
+      const createDeploymentScope = nock('https://api.github.com')
+        .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
+          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          pages_build_version: process.env.GITHUB_SHA
+        })
+        .reply(404, { message: 'Not found' })
+
+      // Create the deployment
+      const deployment = new Deployment()
+      await expect(deployment.create()).rejects.toEqual(
+        new Error(
+          `Failed to create deployment (status: 404) with build version ${process.env.GITHUB_SHA}. Ensure GitHub Pages has been enabled: ${ghesOrigin}/actions/is-awesome/settings/pages\nNote: This action version may not yet support GitHub Enterprise Server, please check the compatibility table.`
+        )
+      )
+
+      artifactExchangeScope.done()
+      createDeploymentScope.done()
+    })
+
     it('reports errors with failed deployments', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
       const artifactExchangeScope = nock(`http://my-url`)
@@ -383,13 +410,14 @@ describe('Deployment', () => {
     })
 
     it('fails check when no deployment is found', async () => {
+      expect.assertions(1)
       process.env.GITHUB_SHA = 'valid-build-version'
       const deployment = new Deployment()
-      await deployment.check()
-      expect(core.setFailed).toBeCalledWith('Deployment not found.')
+      await expect(deployment.check()).rejects.toThrow('Deployment not found.')
     })
 
     it('exits early when deployment is not in progress', async () => {
+      expect.assertions(1)
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const artifactExchangeScope = nock(`http://my-url`)
@@ -417,14 +445,14 @@ describe('Deployment', () => {
       const deployment = new Deployment()
       await deployment.create(fakeJwt)
       deployment.deploymentInfo.pending = false
-      await deployment.check()
-      expect(core.setFailed).toBeCalledWith('Unable to get deployment status.')
+      await expect(deployment.check()).rejects.toThrow('Unable to get deployment status.')
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
     })
 
     it('enforces max timeout', async () => {
+      expect.assertions(3)
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const artifactExchangeScope = nock(`http://my-url`)
@@ -479,11 +507,10 @@ describe('Deployment', () => {
       // Create the deployment
       const deployment = new Deployment()
       await deployment.create(fakeJwt)
-      await deployment.check()
 
-      expect(deployment.timeout).toEqual(MAX_TIMEOUT)
+      await expect(deployment.check()).rejects.toThrow('Timeout reached, aborting!')
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
-      expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
+      expect(deployment.timeout).toEqual(MAX_TIMEOUT)
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
@@ -491,6 +518,7 @@ describe('Deployment', () => {
     })
 
     it('sets timeout to user timeout if user timeout is less than max timeout', async () => {
+      expect.assertions(3)
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const artifactExchangeScope = nock(`http://my-url`)
@@ -545,11 +573,10 @@ describe('Deployment', () => {
       // Create the deployment
       const deployment = new Deployment()
       await deployment.create(fakeJwt)
-      await deployment.check()
 
-      expect(deployment.timeout).toEqual(42)
+      await expect(deployment.check()).rejects.toThrow('Timeout reached, aborting!')
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
-      expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
+      expect(deployment.timeout).toEqual(42)
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
@@ -663,7 +690,7 @@ describe('Deployment', () => {
       // Cancel it
       await deployment.cancel()
 
-      expect(core.info).toHaveBeenLastCalledWith(`Canceled deployment with ID ${process.env.GITHUB_SHA}`)
+      expect(core.info).toHaveBeenLastCalledWith(`Cancelled deployment with ID ${process.env.GITHUB_SHA}`)
 
       artifactExchangeScope.done()
       createDeploymentScope.done()
@@ -684,6 +711,7 @@ describe('Deployment', () => {
     })
 
     it('catches an error when trying to cancel a deployment', async () => {
+      expect.assertions(2)
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const artifactExchangeScope = nock(`http://my-url`)
@@ -709,7 +737,7 @@ describe('Deployment', () => {
       // nock will throw an error every time it tries to cancel the deployment
       const cancelDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}/cancel`)
-        .reply(500, {})
+        .reply(500, { message: 'oh no' })
 
       core.getIDToken = jest.fn().mockResolvedValue(fakeJwt)
 
@@ -718,9 +746,8 @@ describe('Deployment', () => {
       await deployment.create(fakeJwt)
 
       // Cancel it
-      await deployment.cancel()
-
-      expect(core.error).toHaveBeenCalledWith(`Canceling Pages deployment failed`, expect.anything())
+      await expect(deployment.cancel()).rejects.toThrow('Cancelling Pages deployment failed: oh no')
+      expect(core.error).toHaveBeenCalled()
 
       artifactExchangeScope.done()
       createDeploymentScope.done()

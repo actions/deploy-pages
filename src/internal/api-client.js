@@ -157,7 +157,7 @@ async function getPagesDeploymentStatus({ githubToken, deploymentId }) {
 async function cancelPagesDeployment({ githubToken, deploymentId }) {
   const octokit = github.getOctokit(githubToken)
 
-  core.info('Canceling Pages deployment...')
+  core.info('Cancelling Pages deployment...')
   try {
     const response = await octokit.request('POST /repos/{owner}/{repo}/pages/deployments/{deploymentId}/cancel', {
       owner: github.context.repo.owner,
@@ -167,7 +167,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 
     return response.data
   } catch (error) {
-    core.error('Canceling Pages deployment failed', error)
+    core.error('Cancelling Pages deployment failed', error)
     throw error
   }
 }
