@@ -9866,10 +9866,12 @@ async function processRuntimeResponse(res, requestOptions) {
 }
 
 async function getArtifactMetadata({ githubToken, runId, artifactName }) {
+  core.info("Creating octokit")
   const octokit = github.getOctokit(githubToken)
+  core.info("Octokit created")
 
   try {
-    console.log(`Fetching artifact metadata for run ${runId}...`)
+    core.info(`Fetching artifact metadata for run ${runId}...`)
 
     const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts', {
       owner: github.context.repo.owner,
@@ -10111,6 +10113,7 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
+      core.info("Getting artifact's metadata...")
       const artifactData = await getArtifactMetadata({
         githubToken: this.githubToken,
         workflowRunId: this.workflowRun,
