@@ -2,11 +2,7 @@ const core = require('@actions/core')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
-const {
-  getArtifactMetadata,
-  getPagesDeploymentStatus,
-  cancelPagesDeployment
-} = require('./api-client')
+const { getArtifactMetadata, getPagesDeploymentStatus, cancelPagesDeployment } = require('./api-client')
 
 const temporaryErrorStatus = {
   unknown_status: 'Unable to get deployment status.',

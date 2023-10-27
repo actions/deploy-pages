@@ -9865,15 +9865,16 @@ async function processRuntimeResponse(res, requestOptions) {
   return response
 }
 
-async function getArtifactMetadata({githubToken, runId, artifactName}) {
+async function getArtifactMetadata({ githubToken, runId, artifactName }) {
   const octokit = github.getOctokit(githubToken)
 
   try {
-    const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}', {
+    console.log(`Fetching artifact metadata for run ${runId}...`)
+
+    const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      run_id: runId,
-      artifactName: artifactName
+      run_id: runId
     })
 
     return response.data
@@ -10054,11 +10055,7 @@ const core = __nccwpck_require__(2186)
 
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(8454)
-const {
-  getArtifactMetadata,
-  getPagesDeploymentStatus,
-  cancelPagesDeployment
-} = __nccwpck_require__(572)
+const { getArtifactMetadata, getPagesDeploymentStatus, cancelPagesDeployment } = __nccwpck_require__(572)
 
 const temporaryErrorStatus = {
   unknown_status: 'Unable to get deployment status.',
