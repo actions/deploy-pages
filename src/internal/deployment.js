@@ -4,7 +4,6 @@ const core = require('@actions/core')
 const getContext = require('./context')
 const {
   getArtifactMetadata,
-  createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
 } = require('./api-client')
@@ -71,7 +70,7 @@ class Deployment {
 
       console.log(artifactData)
 
-      return nil
+      return
     } catch (error) {
       core.error(error.stack)
 
