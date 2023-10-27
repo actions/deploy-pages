@@ -10076,7 +10076,7 @@ const core = __nccwpck_require__(2186)
 
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(8454)
-const { getArtifactMetadata, getPagesDeploymentStatus, cancelPagesDeployment } = __nccwpck_require__(572)
+const { getArtifactMetadata, getPagesDeploymentStatus, createPagesDeployment, cancelPagesDeployment } = __nccwpck_require__(572)
 
 const temporaryErrorStatus = {
   unknown_status: 'Unable to get deployment status.',
