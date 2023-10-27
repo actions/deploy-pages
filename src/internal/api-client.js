@@ -54,6 +54,24 @@ async function processRuntimeResponse(res, requestOptions) {
   return response
 }
 
+async function getArtifactMetadata({githubToken, runId, artifactName}) {
+  const octokit = github.getOctokit(githubToken)
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}', {
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      run_id: runId,
+      artifactName: artifactName
+    })
+
+    return response.data
+  } catch (error) {
+    core.error('Fetching artifact metadata failed', error)
+    throw error
+  }
+}
+
 async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifactName }) {
   const { runTimeUrl: RUNTIME_URL } = getContext()
   const artifactExchangeUrl = `${RUNTIME_URL}_apis/pipelines/workflows/${workflowRunId}/artifacts?api-version=6.0-preview`
@@ -173,6 +191,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 }
 
 module.exports = {
+  getArtifactMetadata,
   getSignedArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,

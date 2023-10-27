@@ -3,7 +3,7 @@ const core = require('@actions/core')
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
 const {
-  getSignedArtifactMetadata,
+  getArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -31,9 +31,7 @@ const SIZE_LIMIT_DESCRIPTION = '1 GB'
 class Deployment {
   constructor() {
     const context = getContext()
-    this.runTimeUrl = context.runTimeUrl
     this.repositoryNwo = context.repositoryNwo
-    this.runTimeToken = context.runTimeToken
     this.buildVersion = context.buildVersion
     this.buildActor = context.buildActor
     this.actionsId = context.actionsId
@@ -65,40 +63,15 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getSignedArtifactMetadata({
-        runtimeToken: this.runTimeToken,
+      const artifactData = await getArtifactMetadata({
+        githubToken: this.githubToken,
         workflowRunId: this.workflowRun,
         artifactName: this.artifactName
       })
 
-      if (artifactData?.size > ONE_GIGABYTE) {
-        core.warning(
-          `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
-        )
-      }
+      console.log(artifactData)
 
-      const deployment = await createPagesDeployment({
-        githubToken: this.githubToken,
-        artifactUrl: artifactData.url,
-        buildVersion: this.buildVersion,
-        idToken,
-        isPreview: this.isPreview
-      })
-
-      if (deployment) {
-        this.deploymentInfo = {
-          ...deployment,
-          id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
-          pending: true
-        }
-        this.startTime = Date.now()
-      }
-
-      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
-
-      core.debug(JSON.stringify(deployment))
-
-      return deployment
+      return nil
     } catch (error) {
       core.error(error.stack)
 
