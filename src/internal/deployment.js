@@ -61,7 +61,7 @@ class Deployment {
       core.info("Getting artifact's metadata...")
       const artifactData = await getArtifactMetadata({
         githubToken: this.githubToken,
-        workflowRunId: this.workflowRun,
+        runId: this.workflowRun,
         artifactName: this.artifactName
       })
 

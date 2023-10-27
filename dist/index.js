@@ -9876,7 +9876,7 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
     const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts', {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      runId: runId
+      run_id: runId
     })
 
     return response.data
@@ -10116,7 +10116,7 @@ class Deployment {
       core.info("Getting artifact's metadata...")
       const artifactData = await getArtifactMetadata({
         githubToken: this.githubToken,
-        workflowRunId: this.workflowRun,
+        runId: this.workflowRun,
         artifactName: this.artifactName
       })
 
