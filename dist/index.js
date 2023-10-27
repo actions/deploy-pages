@@ -9871,12 +9871,13 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
   core.info("Octokit created")
 
   try {
-    core.info(`Fetching artifact metadata for run ${runId}...`)
+    core.info(`Fetching artifact metadata for run ${runId} and name ${artifactName}...`)
 
-    const response = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts', {
+    const response = await octokit.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}", {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      run_id: runId
+      run_id: runId,
+      artifactName: artifactName
     })
 
     return response.data
@@ -10271,7 +10272,6 @@ class Deployment {
 }
 
 module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }
-
 
 /***/ }),
 
