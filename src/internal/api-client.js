@@ -149,11 +149,11 @@ async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifact
   }
 }
 
-async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
+async function createPagesDeployment({ githubToken, artifactId, buildVersion, idToken, isPreview = false }) {
   const octokit = github.getOctokit(githubToken)
 
   const payload = {
-    artifact_url: artifactUrl,
+    artifact_id: artifactId,
     pages_build_version: buildVersion,
     oidc_token: idToken
   }

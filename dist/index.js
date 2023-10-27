@@ -9960,11 +9960,11 @@ async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifact
   }
 }
 
-async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
+async function createPagesDeployment({ githubToken, artifactId, buildVersion, idToken, isPreview = false }) {
   const octokit = github.getOctokit(githubToken)
 
   const payload = {
-    artifact_url: artifactUrl,
+    artifact_id: artifactId,
     pages_build_version: buildVersion,
     oidc_token: idToken
   }
@@ -10141,9 +10141,33 @@ class Deployment {
 
       console.log(artifactData)
 
-      // TODO create deployment
+      if (artifactData?.size > ONE_GIGABYTE) {
+        core.warning(
+          `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
+        )
+      }
 
-      return
+      const deployment = await createPagesDeployment({
+        githubToken: this.githubToken,
+        artifactId: artifactData.id,
+        buildVersion: this.buildVersion,
+        idToken,
+        isPreview: this.isPreview
+      })
+
+      if (deployment) {
+        this.deploymentInfo = {
+          ...deployment,
+          id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
+          pending: true
+        }
+        this.startTime = Date.now()
+      }
+
+      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
+      core.debug(JSON.stringify(deployment))
+
+      return deployment
     } catch (error) {
       core.error(error.stack)
 
