@@ -41,7 +41,7 @@ class Deployment {
     this.startTime = null
   }
 
-  // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
+  // Ask the runtime for and artifact id and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
     if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
@@ -66,6 +66,8 @@ class Deployment {
       })
 
       console.log(artifactData)
+
+      // TODO create deployment
 
       return
     } catch (error) {

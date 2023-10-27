@@ -9866,12 +9866,10 @@ async function processRuntimeResponse(res, requestOptions) {
 }
 
 async function getArtifactMetadata({ githubToken, runId, artifactName }) {
-  core.info("Creating octokit")
   const octokit = github.getOctokit(githubToken)
-  core.info("Octokit created")
 
   try {
-    core.info(`Fetching artifact metadata for run ${runId} and name ${artifactName}...`)
+    core.info(`Fetching artifact metadata for ${artifactName} in run ${runId}`)
 
     const response = await octokit.request("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}", {
       owner: github.context.repo.owner,
@@ -9880,7 +9878,27 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
       artifactName: artifactName
     })
 
-    return response.data
+    const artifactCount = response.data.total_count
+    core.debug(`List artifact count: ${artifactCount}`)
+
+    if (artifactCount === 0) {
+      throw new Error(`No artifacts found for workflow run ${runId}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`)
+    } else if (artifactCount > 1) {
+      throw new Error(`Multiple artifact unexpectedly found for workflow run ${runId}. Artifact count is ${artifactCount}.`)
+    }
+    
+    const artifact = response.data.artifacts[0]
+    core.debug(`Artifact: ${JSON.stringify(artifact)}`)
+
+    const artifactSize = artifact.size_in_bytes
+    if (!artifactSize) {
+      core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
+    }
+  
+    return {
+      id: artifact.id,
+      size: artifactSize
+    }
   } catch (error) {
     core.error('Fetching artifact metadata failed', error)
     throw error
@@ -10097,7 +10115,7 @@ class Deployment {
     this.startTime = null
   }
 
-  // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
+  // Ask the runtime for and artifact id and deploy to GitHub Pages
   // by creating a deployment with that artifact
   async create(idToken) {
     if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
@@ -10122,6 +10140,8 @@ class Deployment {
       })
 
       console.log(artifactData)
+
+      // TODO create deployment
 
       return
     } catch (error) {
