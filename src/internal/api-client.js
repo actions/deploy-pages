@@ -43,7 +43,10 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
       size: artifactSize
     }
   } catch (error) {
-    core.error('Fetching artifact metadata failed', error)
+    core.error(
+      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+      error
+    )
     throw error
   }
 }

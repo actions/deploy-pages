@@ -320,6 +320,23 @@ describe('Deployment', () => {
       artifactMetadataScope.done()
     })
 
+    it('fails with error message if list artifact endpoint returns 500', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(500, { message: 'oh no' })
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `Failed to create deployment (status: 500) with build version valid-build-version. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+      )
+
+      artifactMetadataScope.done()
+    })
+
     it('warns if the artifact size is bigger than maximum', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
       const artifactSize = ONE_GIGABYTE + 1
