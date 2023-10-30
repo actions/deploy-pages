@@ -46,8 +46,8 @@ class Deployment {
     this.startTime = null
   }
 
-  // Ask the runtime for and artifact id and deploy to GitHub Pages
-  // by creating a deployment with that artifact
+  // Call GitHub api to fetch artifacts matching the provided name and deploy to GitHub Pages
+  // by creating a deployment with that artifact id
   async create(idToken) {
     if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
       core.warning(
@@ -93,6 +93,7 @@ class Deployment {
       }
 
       core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
+
       core.debug(JSON.stringify(deployment))
 
       return deployment
