@@ -2,7 +2,12 @@ const core = require('@actions/core')
 
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
-const { getArtifactMetadata, getPagesDeploymentStatus, createPagesDeployment, cancelPagesDeployment } = require('./api-client')
+const {
+  getArtifactMetadata,
+  getPagesDeploymentStatus,
+  createPagesDeployment,
+  cancelPagesDeployment
+} = require('./api-client')
 
 const temporaryErrorStatus = {
   unknown_status: 'Unable to get deployment status.',
@@ -58,14 +63,11 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      core.info("Getting artifact's metadata...")
       const artifactData = await getArtifactMetadata({
         githubToken: this.githubToken,
         runId: this.workflowRun,
         artifactName: this.artifactName
       })
-
-      console.log(artifactData)
 
       if (artifactData?.size > ONE_GIGABYTE) {
         core.warning(
