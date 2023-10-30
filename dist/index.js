@@ -9785,8 +9785,8 @@ const core = __nccwpck_require__(2186)
 const getContext = __nccwpck_require__(8454)
 const {
   getArtifactMetadata,
-  getPagesDeploymentStatus,
   createPagesDeployment,
+  getPagesDeploymentStatus,
   cancelPagesDeployment
 } = __nccwpck_require__(572)
 

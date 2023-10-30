@@ -4,8 +4,8 @@ const core = require('@actions/core')
 const getContext = require('./context')
 const {
   getArtifactMetadata,
-  getPagesDeploymentStatus,
   createPagesDeployment,
+  getPagesDeploymentStatus,
   cancelPagesDeployment
 } = require('./api-client')
 
