@@ -9,9 +9,7 @@ const fakeJwt =
 describe('Deployment', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
-    process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
     process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
@@ -53,18 +51,18 @@ describe('Deployment', () => {
     it('can successfully create a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -84,25 +82,25 @@ describe('Deployment', () => {
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('can successfully create a preview deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt,
           preview: true
@@ -127,36 +125,44 @@ describe('Deployment', () => {
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
-    it('reports errors with failed artifact exchange', async () => {
+    it('reports errors with failed artifact metadata exchange', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(400, {})
+
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(400, { message: 'Bad request' })
 
       // Create the deployment
       const deployment = new Deployment()
       await expect(deployment.create()).rejects.toEqual(
         new Error(
-          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad Request`
+          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
         )
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
     })
 
     it('reports errors with a failed 500 in a deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+        })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA
         })
         .reply(500, { message: 'oh no' })
@@ -169,19 +175,24 @@ describe('Deployment', () => {
         )
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('reports errors with an unexpected 403 during deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+        })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA
         })
         .reply(403, { message: 'You are forbidden' })
@@ -194,19 +205,24 @@ describe('Deployment', () => {
         )
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('reports errors with an unexpected 404 during deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+        })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA
         })
         .reply(404, { message: 'Not found' })
@@ -219,19 +235,24 @@ describe('Deployment', () => {
         )
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('reports errors with failed deployments', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+        })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://invalid-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA
         })
         .reply(400, { message: 'Bad request' })
@@ -244,26 +265,100 @@ describe('Deployment', () => {
         )
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
+    })
+
+    it('fails if there are multiple artifacts with the same name', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 2,
+          artifacts: [
+            {
+              id: 13,
+              name: `github-pages`,
+              size_in_bytes: 1400
+            },
+            {
+              id: 14,
+              name: `github-pages`,
+              size_in_bytes: 1620
+            }
+          ]
+        })
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `Multiple artifact unexpectedly found for workflow run ${process.env.GITHUB_RUN_ID}. Artifact count is 2.`
+      )
+
+      artifactMetadataScope.done()
+    })
+
+    it('fails if there are no artifacts found', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(200, {
+          total_count: 0,
+          artifacts: []
+        })
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `No artifacts found for workflow run ${process.env.GITHUB_RUN_ID}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+      )
+
+      artifactMetadataScope.done()
+    })
+
+    it('fails with error message if list artifact endpoint returns 500', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
+        .reply(500, { message: 'oh no' })
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `Failed to create deployment (status: 500) with build version valid-build-version. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+      )
+
+      artifactMetadataScope.done()
     })
 
     it('warns if the artifact size is bigger than maximum', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
       const artifactSize = ONE_GIGABYTE + 1
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://fake-artifact.com', name: 'github-pages', size: `${artifactSize}` },
-            { url: 'https://another-artifact.com', name: 'another-artifact' }
+          total_count: 1,
+          artifacts: [
+            {
+              id: 12,
+              name: `github-pages`,
+              size_in_bytes: `${artifactSize}`
+            }
           ]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 12,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -283,25 +378,25 @@ describe('Deployment', () => {
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('warns when the timeout is greater than the maximum allowed', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -332,7 +427,7 @@ describe('Deployment', () => {
         `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
       )
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
   })
@@ -341,18 +436,18 @@ describe('Deployment', () => {
     it('sets output to success when deployment is successful', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -377,7 +472,7 @@ describe('Deployment', () => {
       expect(core.setOutput).toBeCalledWith('status', 'succeed')
       expect(core.info).toHaveBeenLastCalledWith('Reported success!')
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       deploymentStatusScope.done()
     })
@@ -392,18 +487,18 @@ describe('Deployment', () => {
     it('exits early when deployment is not in progress', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -420,25 +515,25 @@ describe('Deployment', () => {
       await deployment.check()
       expect(core.setFailed).toBeCalledWith('Unable to get deployment status.')
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
     })
 
     it('enforces max timeout', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -485,7 +580,7 @@ describe('Deployment', () => {
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
       expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       cancelDeploymentScope.done()
     })
@@ -493,18 +588,18 @@ describe('Deployment', () => {
     it('sets timeout to user timeout if user timeout is less than max timeout', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -551,7 +646,7 @@ describe('Deployment', () => {
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
       expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       cancelDeploymentScope.done()
     })
@@ -559,18 +654,18 @@ describe('Deployment', () => {
     it('sets output to success when timeout is set but not reached', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -620,7 +715,7 @@ describe('Deployment', () => {
       expect(core.setOutput).toBeCalledWith('status', 'succeed')
       expect(core.info).toHaveBeenLastCalledWith('Reported success!')
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       deploymentStatusScope.done()
     })
@@ -630,18 +725,18 @@ describe('Deployment', () => {
     it('can successfully cancel a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -665,7 +760,7 @@ describe('Deployment', () => {
 
       expect(core.info).toHaveBeenLastCalledWith(`Canceled deployment with ID ${process.env.GITHUB_SHA}`)
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       cancelDeploymentScope.done()
     })
@@ -686,18 +781,18 @@ describe('Deployment', () => {
     it('catches an error when trying to cancel a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
+      const artifactMetadataScope = nock(`https://api.github.com`)
+        .get(
+          `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`
+        )
         .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+          total_count: 1,
+          artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
         })
 
       const createDeploymentScope = nock('https://api.github.com')
         .post(`/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`, {
-          artifact_url: 'https://fake-artifact.com&%24expand=SignedContent',
+          artifact_id: 11,
           pages_build_version: process.env.GITHUB_SHA,
           oidc_token: fakeJwt
         })
@@ -722,7 +817,7 @@ describe('Deployment', () => {
 
       expect(core.error).toHaveBeenCalledWith(`Canceling Pages deployment failed`, expect.anything())
 
-      artifactExchangeScope.done()
+      artifactMetadataScope.done()
       createDeploymentScope.done()
       cancelDeploymentScope.done()
     })

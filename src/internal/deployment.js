@@ -3,7 +3,7 @@ const core = require('@actions/core')
 // All variables we need from the runtime are loaded here
 const getContext = require('./context')
 const {
-  getSignedArtifactMetadata,
+  getArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -31,9 +31,7 @@ const SIZE_LIMIT_DESCRIPTION = '1 GB'
 class Deployment {
   constructor() {
     const context = getContext()
-    this.runTimeUrl = context.runTimeUrl
     this.repositoryNwo = context.repositoryNwo
-    this.runTimeToken = context.runTimeToken
     this.buildVersion = context.buildVersion
     this.buildActor = context.buildActor
     this.actionsId = context.actionsId
@@ -48,8 +46,8 @@ class Deployment {
     this.startTime = null
   }
 
-  // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
-  // by creating a deployment with that artifact
+  // Call GitHub api to fetch artifacts matching the provided name and deploy to GitHub Pages
+  // by creating a deployment with that artifact id
   async create(idToken) {
     if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
       core.warning(
@@ -65,9 +63,9 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getSignedArtifactMetadata({
-        runtimeToken: this.runTimeToken,
-        workflowRunId: this.workflowRun,
+      const artifactData = await getArtifactMetadata({
+        githubToken: this.githubToken,
+        runId: this.workflowRun,
         artifactName: this.artifactName
       })
 
@@ -79,7 +77,7 @@ class Deployment {
 
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactUrl: artifactData.url,
+        artifactId: artifactData.id,
         buildVersion: this.buildVersion,
         idToken,
         isPreview: this.isPreview
