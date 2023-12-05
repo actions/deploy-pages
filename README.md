@@ -89,6 +89,8 @@ This action is primarily design for use with GitHub.com's Actions workflows and 
 
 | Release | GHES Compatibility |
 |:---|:---|
+| [`v3`](https://github.com/actions/deploy-pages/releases/tag/v3) | `>= 3.9` |
+| `v3.x.x` | `>= 3.9` |
 | [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | `>= 3.9` |
 | `v2.x.x` | `>= 3.9` |
 | [`v1`](https://github.com/actions/deploy-pages/releases/tag/v1) | `>= 3.7` |
