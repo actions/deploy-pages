@@ -30,6 +30,8 @@ describe('Deployment', () => {
           return 'github-pages'
         case 'token':
           return process.env.GITHUB_TOKEN
+        case 'reporting_interval':
+          return 50 // Lower reporting interval to speed up test
         default:
           return process.env[`INPUT_${param.toUpperCase()}`] || ''
       }
@@ -433,6 +435,8 @@ describe('Deployment', () => {
             return 'github-pages'
           case 'token':
             return process.env.GITHUB_TOKEN
+          case 'reporting_interval':
+            return 50 // Lower reporting interval to speed up test
           case 'timeout':
             return MAX_TIMEOUT + 1
           default:
@@ -568,7 +572,6 @@ describe('Deployment', () => {
       artifactExchangeScope.done()
     })
 
-    // TODO: Fix! Consistently fails.
     it('enforces max timeout', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
@@ -634,8 +637,8 @@ describe('Deployment', () => {
             return process.env.GITHUB_TOKEN
           case 'error_count':
             return 10
-          // case 'reporting_interval':
-          //   return 50 // The default of 5000 is too long for the test
+          case 'reporting_interval':
+            return 50 // Lower the interval for the test
           case 'timeout':
             return MAX_TIMEOUT + 1
           default:
@@ -643,18 +646,22 @@ describe('Deployment', () => {
         }
       })
 
-      const now = Date.now()
-      const mockStartTime = now - MAX_TIMEOUT
-      jest
+      // Jump the "current time" by MAX_TIMEOUT ever time Date.now is called
+      const _now = Date.now
+      let nowCalls = 0
+      const nowSpy = jest
         .spyOn(Date, 'now')
-        .mockImplementationOnce(() => mockStartTime)
-        .mockImplementationOnce(() => now)
-        .mockImplementationOnce(() => now + MAX_TIMEOUT)
+        .mockImplementation(() => {
+          nowCalls++
+          return _now() + (MAX_TIMEOUT * nowCalls)
+        })
 
       // Create the deployment
       const deployment = new Deployment()
       await deployment.create(fakeJwt)
       await deployment.check()
+
+      nowSpy.mockRestore()
 
       expect(deployment.timeout).toEqual(MAX_TIMEOUT)
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
