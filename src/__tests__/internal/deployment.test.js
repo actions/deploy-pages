@@ -720,6 +720,8 @@ describe('Deployment', () => {
             return process.env.GITHUB_TOKEN
           case 'error_count':
             return 10
+          case 'reporting_interval':
+            return 42 // The default of 5000 is too long for the test
           case 'timeout':
             return 42
           default:
@@ -746,7 +748,6 @@ describe('Deployment', () => {
       artifactExchangeScope.done()
     })
 
-    // TODO: Intermittently fails if the other test does
     it('sets output to success when timeout is set but not reached', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
@@ -804,6 +805,8 @@ describe('Deployment', () => {
             return process.env.GITHUB_TOKEN
           case 'error_count':
             return 10
+          case 'reporting_interval':
+            return 0 // The default of 5000 is too long for the test
           case 'timeout':
             return 42
           default:
