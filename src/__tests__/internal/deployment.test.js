@@ -649,12 +649,10 @@ describe('Deployment', () => {
       // Jump the "current time" by MAX_TIMEOUT ever time Date.now is called
       const _now = Date.now
       let nowCalls = 0
-      const nowSpy = jest
-        .spyOn(Date, 'now')
-        .mockImplementation(() => {
-          nowCalls++
-          return _now() + (MAX_TIMEOUT * nowCalls)
-        })
+      const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => {
+        nowCalls++
+        return _now() + MAX_TIMEOUT * nowCalls
+      })
 
       // Create the deployment
       const deployment = new Deployment()
