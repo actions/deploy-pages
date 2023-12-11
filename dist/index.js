@@ -29659,6 +29659,18 @@ module.exports = class BodyReadable extends Readable {
     return super.destroy(err)
   }
 
+  _destroy (err, callback) {
+    // Workaround for Node "bug". If the stream is destroyed in same
+    // tick as it is created, then a user who is waiting for a
+    // promise (i.e micro tick) for installing a 'error' listener will
+    // never get a chance and will always encounter an unhandled exception.
+    // - tick => process.nextTick(fn)
+    // - micro tick => queueMicrotask(fn)
+    queueMicrotask(() => {
+      callback(err)
+    })
+  }
+
   emit (ev, ...args) {
     if (ev === 'data') {
       // Node < 16.7
@@ -29763,7 +29775,7 @@ module.exports = class BodyReadable extends Readable {
       }
     }
 
-    if (this.closed) {
+    if (this._readableState.closeEmitted) {
       return Promise.resolve(null)
     }
 
@@ -29807,33 +29819,44 @@ function isUnusable (self) {
 }
 
 async function consume (stream, type) {
-  if (isUnusable(stream)) {
-    throw new TypeError('unusable')
-  }
-
   assert(!stream[kConsume])
 
   return new Promise((resolve, reject) => {
-    stream[kConsume] = {
-      type,
-      stream,
-      resolve,
-      reject,
-      length: 0,
-      body: []
+    if (isUnusable(stream)) {
+      const rState = stream._readableState
+      if (rState.destroyed && rState.closeEmitted === false) {
+        stream
+          .on('error', err => {
+            reject(err)
+          })
+          .on('close', () => {
+            reject(new TypeError('unusable'))
+          })
+      } else {
+        reject(rState.errored ?? new TypeError('unusable'))
+      }
+    } else {
+      stream[kConsume] = {
+        type,
+        stream,
+        resolve,
+        reject,
+        length: 0,
+        body: []
+      }
+
+      stream
+        .on('error', function (err) {
+          consumeFinish(this[kConsume], err)
+        })
+        .on('close', function () {
+          if (this[kConsume].body !== null) {
+            consumeFinish(this[kConsume], new RequestAbortedError())
+          }
+        })
+
+      queueMicrotask(() => consumeStart(stream[kConsume]))
     }
-
-    stream
-      .on('error', function (err) {
-        consumeFinish(this[kConsume], err)
-      })
-      .on('close', function () {
-        if (this[kConsume].body !== null) {
-          consumeFinish(this[kConsume], new RequestAbortedError())
-        }
-      })
-
-    process.nextTick(consumeStart, stream[kConsume])
   })
 }
 
@@ -33209,12 +33232,19 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
       body.resume()
     }
   }
-  const onAbort = function () {
-    if (finished) {
-      return
+  const onClose = function () {
+    // 'close' might be emitted *before* 'error' for
+    // broken streams. Wait a tick to avoid this case.
+    queueMicrotask(() => {
+      // It's only safe to remove 'error' listener after
+      // 'close'.
+      body.removeListener('error', onFinished)
+    })
+
+    if (!finished) {
+      const err = new RequestAbortedError()
+      queueMicrotask(() => onFinished(err))
     }
-    const err = new RequestAbortedError()
-    queueMicrotask(() => onFinished(err))
   }
   const onFinished = function (err) {
     if (finished) {
@@ -33232,8 +33262,7 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
     body
       .removeListener('data', onData)
       .removeListener('end', onFinished)
-      .removeListener('error', onFinished)
-      .removeListener('close', onAbort)
+      .removeListener('close', onClose)
 
     if (!err) {
       try {
@@ -33256,7 +33285,7 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
     .on('data', onData)
     .on('end', onFinished)
     .on('error', onFinished)
-    .on('close', onAbort)
+    .on('close', onClose)
 
   if (body.resume) {
     body.resume()
