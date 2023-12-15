@@ -66,9 +66,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -121,9 +122,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -182,12 +184,9 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(400,
-          { message: 'Bad request' },
-          { headers: { 'content-type': 'application/json' } }
-        )
+        .reply(400, { message: 'Bad request' }, { headers: { 'content-type': 'application/json' } })
 
       // Create the deployment
       const deployment = new Deployment()
@@ -203,9 +202,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -245,9 +245,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -287,9 +288,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -329,9 +331,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -372,9 +375,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 2,
             artifacts: [
@@ -405,9 +409,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 0,
             artifacts: []
@@ -427,12 +432,9 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(500,
-          { message: 'oh no' },
-          { headers: { 'content-type': 'application/json' } }
-        )
+        .reply(500, { message: 'oh no' }, { headers: { 'content-type': 'application/json' } })
 
       const deployment = new Deployment()
       await expect(deployment.create(fakeJwt)).rejects.toThrow(
@@ -447,9 +449,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 12, name: `github-pages`, size_in_bytes: artifactSize }]
@@ -502,9 +505,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -573,9 +577,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -641,9 +646,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -693,9 +699,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -791,9 +798,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -878,9 +886,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -968,9 +977,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
@@ -1043,9 +1053,10 @@ describe('Deployment', () => {
       mockPool
         .intercept({
           path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
-          method: "GET",
+          method: 'GET'
         })
-        .reply(200,
+        .reply(
+          200,
           {
             total_count: 1,
             artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
