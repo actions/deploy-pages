@@ -24859,7 +24859,7 @@ __export(dist_src_exports, {
 module.exports = __toCommonJS(dist_src_exports);
 
 // pkg/dist-src/version.js
-var VERSION = "9.1.4";
+var VERSION = "9.1.5";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse(response) {
@@ -27865,102 +27865,6 @@ exports.Deprecation = Deprecation;
 
 /***/ }),
 
-/***/ 3703:
-/***/ ((module) => {
-
-// Source: 2014-06-11: http://en.wikipedia.org/wiki/HTTP_status_codes
-
-module.exports = {
-  100: "Continue",
-  101: "Switching Protocols",
-  102: "Processing",
-
-  200: "OK",
-  201: "Created",
-  202: "Accepted",
-  203: "Non-Authoritative Information",
-  204: "No Content",
-  205: "Reset Content",
-  206: "Partial Content",
-  207: "Multi-Status",
-  208: "Already Reported",
-  226: "IM Used",
-
-  300: "Multiple Choices",
-  301: "Moved Permanently",
-  302: "Found",
-  303: "See Other",
-  304: "Not Modified",
-  305: "Use Proxy",
-  306: "Switch Proxy",
-  307: "Temporary Redirect",
-  308: "Permanent Redirect",
-
-  400: "Bad Request",
-  401: "Unauthorized",
-  402: "Payment Required",
-  403: "Forbidden",
-  404: "Not Found",
-  405: "Method Not Allowed",
-  406: "Not Acceptable",
-  407: "Proxy Authentication Required",
-  408: "Request Timeout",
-  409: "Conflict",
-  410: "Gone",
-  411: "Length Required",
-  412: "Precondition Failed",
-  413: "Request Entity Too Large",
-  414: "Request-URI Too Long",
-  415: "Unsupported Media Type",
-  416: "Requested Range Not Satisfiable",
-  417: "Expectation Failed",
-  418: "I'm a teapot",
-  419: "Authentication Timeout",
-  420: "Method Failure",
-  420: "Enhance Your Calm",
-  422: "Unprocessable Entity",
-  423: "Locked",
-  424: "Failed Dependency",
-  426: "Upgrade Required",
-  428: "Precondition Required",
-  429: "Too Many Requests",
-  431: "Request Header Fields Too Large",
-  440: "Login Timeout",
-  444: "No Response",
-  449: "Retry With",
-  450: "Blocked by Windows Parental Controls",
-  451: "Unavailable For Legal Reasons",
-  451: "Redirect",
-  494: "Request Header Too Large",
-  495: "Cert Error",
-  496: "No Cert",
-  497: "HTTP to HTTPS",
-  499: "Client Closed Request",
-
-  500: "Internal Server Error",
-  501: "Not Implemented",
-  502: "Bad Gateway",
-  503: "Service Unavailable",
-  504: "Gateway Timeout",
-  505: "HTTP Version Not Supported",
-  506: "Variant Also Negotiates",
-  507: "Insufficient Storage",
-  508: "Loop Detected",
-  509: "Bandwidth Limit Exceeded",
-  510: "Not Extended",
-  511: "Network Authentication Required",
-  520: "Origin Error",
-  521: "Web server is down",
-  522: "Connection timed out",
-  523: "Proxy Declined Request",
-  524: "A timeout occurred",
-  598: "Network read timeout error",
-  599: "Network connect timeout error"
-};
-
-
-/***/ }),
-
 /***/ 1223:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -29659,6 +29563,18 @@ module.exports = class BodyReadable extends Readable {
     return super.destroy(err)
   }
 
+  _destroy (err, callback) {
+    // Workaround for Node "bug". If the stream is destroyed in same
+    // tick as it is created, then a user who is waiting for a
+    // promise (i.e micro tick) for installing a 'error' listener will
+    // never get a chance and will always encounter an unhandled exception.
+    // - tick => process.nextTick(fn)
+    // - micro tick => queueMicrotask(fn)
+    queueMicrotask(() => {
+      callback(err)
+    })
+  }
+
   emit (ev, ...args) {
     if (ev === 'data') {
       // Node < 16.7
@@ -29763,7 +29679,7 @@ module.exports = class BodyReadable extends Readable {
       }
     }
 
-    if (this.closed) {
+    if (this._readableState.closeEmitted) {
       return Promise.resolve(null)
     }
 
@@ -29807,33 +29723,44 @@ function isUnusable (self) {
 }
 
 async function consume (stream, type) {
-  if (isUnusable(stream)) {
-    throw new TypeError('unusable')
-  }
-
   assert(!stream[kConsume])
 
   return new Promise((resolve, reject) => {
-    stream[kConsume] = {
-      type,
-      stream,
-      resolve,
-      reject,
-      length: 0,
-      body: []
+    if (isUnusable(stream)) {
+      const rState = stream._readableState
+      if (rState.destroyed && rState.closeEmitted === false) {
+        stream
+          .on('error', err => {
+            reject(err)
+          })
+          .on('close', () => {
+            reject(new TypeError('unusable'))
+          })
+      } else {
+        reject(rState.errored ?? new TypeError('unusable'))
+      }
+    } else {
+      stream[kConsume] = {
+        type,
+        stream,
+        resolve,
+        reject,
+        length: 0,
+        body: []
+      }
+
+      stream
+        .on('error', function (err) {
+          consumeFinish(this[kConsume], err)
+        })
+        .on('close', function () {
+          if (this[kConsume].body !== null) {
+            consumeFinish(this[kConsume], new RequestAbortedError())
+          }
+        })
+
+      queueMicrotask(() => consumeStart(stream[kConsume]))
     }
-
-    stream
-      .on('error', function (err) {
-        consumeFinish(this[kConsume], err)
-      })
-      .on('close', function () {
-        if (this[kConsume].body !== null) {
-          consumeFinish(this[kConsume], new RequestAbortedError())
-        }
-      })
-
-    process.nextTick(consumeStart, stream[kConsume])
   })
 }
 
@@ -33209,12 +33136,19 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
       body.resume()
     }
   }
-  const onAbort = function () {
-    if (finished) {
-      return
+  const onClose = function () {
+    // 'close' might be emitted *before* 'error' for
+    // broken streams. Wait a tick to avoid this case.
+    queueMicrotask(() => {
+      // It's only safe to remove 'error' listener after
+      // 'close'.
+      body.removeListener('error', onFinished)
+    })
+
+    if (!finished) {
+      const err = new RequestAbortedError()
+      queueMicrotask(() => onFinished(err))
     }
-    const err = new RequestAbortedError()
-    queueMicrotask(() => onFinished(err))
   }
   const onFinished = function (err) {
     if (finished) {
@@ -33232,8 +33166,7 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
     body
       .removeListener('data', onData)
       .removeListener('end', onFinished)
-      .removeListener('error', onFinished)
-      .removeListener('close', onAbort)
+      .removeListener('close', onClose)
 
     if (!err) {
       try {
@@ -33256,7 +33189,7 @@ function writeStream ({ h2stream, body, client, request, socket, contentLength, 
     .on('data', onData)
     .on('end', onFinished)
     .on('error', onFinished)
-    .on('close', onAbort)
+    .on('close', onClose)
 
   if (body.resume) {
     body.resume()
@@ -51320,120 +51253,62 @@ function wrappy (fn, cb) {
 
 const core = __nccwpck_require__(2186)
 const github = __nccwpck_require__(5438)
-const hc = __nccwpck_require__(6255)
-const { RequestError } = __nccwpck_require__(537)
-const HttpStatusMessages = __nccwpck_require__(3703)
 
-// All variables we need from the runtime are loaded here
-const getContext = __nccwpck_require__(8454)
-
-async function processRuntimeResponse(res, requestOptions) {
-  // Parse the response body as JSON
-  let obj = null
-  try {
-    const contents = await res.readBody()
-    if (contents && contents.length > 0) {
-      obj = JSON.parse(contents)
-    }
-  } catch (error) {
-    // Invalid resource (contents not json); leaving resulting obj as null
-  }
-
-  // Specific response shape aligned with Octokit
-  const response = {
-    url: res.message?.url || requestOptions.url,
-    status: res.message?.statusCode || 0,
-    headers: {
-      ...res.message?.headers
-    },
-    data: obj
-  }
-
-  // Forcibly throw errors for negative HTTP status codes!
-  // @actions/http-client doesn't do this by default.
-  // Mimic the errors thrown by Octokit for consistency.
-  if (response.status >= 400) {
-    // Try to get an error message from the response body
-    const errorMsg =
-      (typeof response.data === 'string' && response.data) ||
-      response.data?.error ||
-      response.data?.message ||
-      // Try the Node HTTP IncomingMessage's statusMessage property
-      res.message?.statusMessage ||
-      // Fallback to the HTTP status message based on the status code
-      HttpStatusMessages[response.status] ||
-      // Or if the status code is unexpected...
-      `Unknown error (${response.status})`
-
-    throw new RequestError(errorMsg, response.status, {
-      response,
-      request: requestOptions
-    })
-  }
-
-  return response
-}
-
-async function getSignedArtifactMetadata({ runtimeToken, workflowRunId, artifactName }) {
-  const { runTimeUrl: RUNTIME_URL } = getContext()
-  const artifactExchangeUrl = `${RUNTIME_URL}_apis/pipelines/workflows/${workflowRunId}/artifacts?api-version=6.0-preview`
-
-  const httpClient = new hc.HttpClient()
-  let data = null
+async function getArtifactMetadata({ githubToken, runId, artifactName }) {
+  const octokit = github.getOctokit(githubToken)
 
   try {
-    const requestHeaders = {
-      accept: 'application/json',
-      authorization: `Bearer ${runtimeToken}`
+    core.info(`Fetching artifact metadata for ${artifactName} in run ${runId}`)
+
+    const response = await octokit.request(
+      'GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}',
+      {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        run_id: runId,
+        artifactName: artifactName
+      }
+    )
+
+    const artifactCount = response.data.total_count
+    core.debug(`List artifact count: ${artifactCount}`)
+
+    if (artifactCount === 0) {
+      throw new Error(
+        `No artifacts found for workflow run ${runId}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+      )
+    } else if (artifactCount > 1) {
+      throw new Error(
+        `Multiple artifact unexpectedly found for workflow run ${runId}. Artifact count is ${artifactCount}.`
+      )
     }
-    const requestOptions = {
-      method: 'GET',
-      url: artifactExchangeUrl,
-      headers: {
-        ...requestHeaders
-      },
-      body: null
+
+    const artifact = response.data.artifacts[0]
+    core.debug(`Artifact: ${JSON.stringify(artifact)}`)
+
+    const artifactSize = artifact.size_in_bytes
+    if (!artifactSize) {
+      core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
     }
 
-    core.info(`Artifact exchange URL: ${artifactExchangeUrl}`)
-    const res = await httpClient.get(artifactExchangeUrl, requestHeaders)
-
-    // May throw a RequestError (HttpError)
-    const response = await processRuntimeResponse(res, requestOptions)
-
-    data = response.data
-    core.debug(JSON.stringify(data))
+    return {
+      id: artifact.id,
+      size: artifactSize
+    }
   } catch (error) {
-    core.error('Getting signed artifact URL failed', error)
+    core.error(
+      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+      error
+    )
     throw error
   }
-
-  const artifact = data?.value?.find(artifact => artifact.name === artifactName)
-  const artifactRawUrl = artifact?.url
-  if (!artifactRawUrl) {
-    throw new Error(
-      'No uploaded artifact was found! Please check if there are any errors at build step, or uploaded artifact name is correct.'
-    )
-  }
-
-  const signedArtifactUrl = `${artifactRawUrl}&%24expand=SignedContent`
-
-  const artifactSize = artifact?.size
-  if (!artifactSize) {
-    core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
-  }
-
-  return {
-    url: signedArtifactUrl,
-    size: artifactSize
-  }
 }
 
-async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
+async function createPagesDeployment({ githubToken, artifactId, buildVersion, idToken, isPreview = false }) {
   const octokit = github.getOctokit(githubToken)
 
   const payload = {
-    artifact_url: artifactUrl,
+    artifact_id: artifactId,
     pages_build_version: buildVersion,
     oidc_token: idToken
   }
@@ -51493,7 +51368,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 }
 
 module.exports = {
-  getSignedArtifactMetadata,
+  getArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -51510,9 +51385,7 @@ const core = __nccwpck_require__(2186)
 // Load variables from Actions runtime
 function getRequiredVars() {
   return {
-    runTimeUrl: process.env.ACTIONS_RUNTIME_URL,
     workflowRun: process.env.GITHUB_RUN_ID,
-    runTimeToken: process.env.ACTIONS_RUNTIME_TOKEN,
     repositoryNwo: process.env.GITHUB_REPOSITORY,
     buildVersion: process.env.GITHUB_SHA,
     buildActor: process.env.GITHUB_ACTOR,
@@ -51547,7 +51420,7 @@ const core = __nccwpck_require__(2186)
 // All variables we need from the runtime are loaded here
 const getContext = __nccwpck_require__(8454)
 const {
-  getSignedArtifactMetadata,
+  getArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
   cancelPagesDeployment
@@ -51575,9 +51448,7 @@ const SIZE_LIMIT_DESCRIPTION = '1 GB'
 class Deployment {
   constructor() {
     const context = getContext()
-    this.runTimeUrl = context.runTimeUrl
     this.repositoryNwo = context.repositoryNwo
-    this.runTimeToken = context.runTimeToken
     this.buildVersion = context.buildVersion
     this.buildActor = context.buildActor
     this.actionsId = context.actionsId
@@ -51592,8 +51463,8 @@ class Deployment {
     this.startTime = null
   }
 
-  // Ask the runtime for the unsigned artifact URL and deploy to GitHub Pages
-  // by creating a deployment with that artifact
+  // Call GitHub api to fetch artifacts matching the provided name and deploy to GitHub Pages
+  // by creating a deployment with that artifact id
   async create(idToken) {
     if (Number(core.getInput('timeout')) > MAX_TIMEOUT) {
       core.warning(
@@ -51609,9 +51480,9 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getSignedArtifactMetadata({
-        runtimeToken: this.runTimeToken,
-        workflowRunId: this.workflowRun,
+      const artifactData = await getArtifactMetadata({
+        githubToken: this.githubToken,
+        runId: this.workflowRun,
         artifactName: this.artifactName
       })
 
@@ -51623,7 +51494,7 @@ class Deployment {
 
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactUrl: artifactData.url,
+        artifactId: artifactData.id,
         buildVersion: this.buildVersion,
         idToken,
         isPreview: this.isPreview

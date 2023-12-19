@@ -4,9 +4,7 @@ const path = require('path')
 
 describe('with all environment variables set', () => {
   beforeEach(() => {
-    process.env.ACTIONS_RUNTIME_URL = 'http://my-url'
     process.env.GITHUB_RUN_ID = '123'
-    process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
     process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
@@ -26,7 +24,7 @@ describe('with all environment variables set', () => {
 
 describe('with variables missing', () => {
   it('execution fails if there are missing variables', done => {
-    delete process.env.ACTIONS_RUNTIME_URL
+    delete process.env.GITHUB_RUN_ID
     const ip = path.join(__dirname, '../index.js')
     cp.exec(`node ${ip}`, { env: process.env }, (err, stdout) => {
       expect(stdout).toBe('')

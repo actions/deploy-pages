@@ -1,6 +1,4 @@
 const core = require('@actions/core')
-// For mocking network calls with core http (http-client)
-const nock = require('nock')
 // For mocking network calls with native Fetch (octokit)
 const { MockAgent, setGlobalDispatcher } = require('undici')
 
@@ -14,9 +12,7 @@ describe('Deployment', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    process.env.ACTIONS_RUNTIME_URL = 'http://my-url/'
     process.env.GITHUB_RUN_ID = '123'
-    process.env.ACTIONS_RUNTIME_TOKEN = 'a-token'
     process.env.GITHUB_REPOSITORY = 'actions/is-awesome'
     process.env.GITHUB_TOKEN = 'gha-token'
     process.env.GITHUB_SHA = '123abc'
@@ -67,14 +63,19 @@ describe('Deployment', () => {
     it('can successfully create a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -85,10 +86,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA &&
               body.oidc_token === fakeJwt
             )
@@ -113,21 +114,24 @@ describe('Deployment', () => {
       expect(core.info).toHaveBeenLastCalledWith(
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
-
-      artifactExchangeScope.done()
     })
 
     it('can successfully create a preview deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -138,11 +142,11 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 4 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
               keys[3] === 'preview' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA &&
               body.oidc_token === fakeJwt &&
               body.preview === true
@@ -172,32 +176,42 @@ describe('Deployment', () => {
       expect(core.info).toHaveBeenLastCalledWith(
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
-
-      artifactExchangeScope.done()
     })
 
-    it('reports errors with failed artifact exchange', async () => {
+    it('reports errors with failed artifact metadata exchange', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(400, {})
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(400, { message: 'Bad request' }, { headers: { 'content-type': 'application/json' } })
 
       // Create the deployment
       const deployment = new Deployment()
       await expect(deployment.create()).rejects.toEqual(
         new Error(
-          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad Request`
+          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
         )
       )
-
-      artifactExchangeScope.done()
     })
 
     it('reports errors with a failed 500 in a deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -208,9 +222,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_url === 'https://invalid-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -224,15 +238,23 @@ describe('Deployment', () => {
           `Failed to create deployment (status: 500) with build version ${process.env.GITHUB_SHA}. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
         )
       )
-
-      artifactExchangeScope.done()
     })
 
     it('reports errors with an unexpected 403 during deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -243,9 +265,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_url === 'https://invalid-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -259,15 +281,23 @@ describe('Deployment', () => {
           `Failed to create deployment (status: 403) with build version ${process.env.GITHUB_SHA}. Ensure GITHUB_TOKEN has permission "pages: write".`
         )
       )
-
-      artifactExchangeScope.done()
     })
 
     it('reports errors with an unexpected 404 during deployment', async () => {
       process.env.GITHUB_SHA = 'build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -278,9 +308,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_url === 'https://invalid-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -294,15 +324,23 @@ describe('Deployment', () => {
           `Failed to create deployment (status: 404) with build version ${process.env.GITHUB_SHA}. Ensure GitHub Pages has been enabled: https://github.com/actions/is-awesome/settings/pages`
         )
       )
-
-      artifactExchangeScope.done()
     })
 
     it('reports errors with failed deployments', async () => {
       process.env.GITHUB_SHA = 'invalid-build-version'
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, { value: [{ url: 'https://invalid-artifact.com', name: 'github-pages' }] })
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -313,9 +351,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_url === 'https://invalid-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -329,22 +367,98 @@ describe('Deployment', () => {
           `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
         )
       )
+    })
 
-      artifactExchangeScope.done()
+    it('fails if there are multiple artifacts with the same name', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 2,
+            artifacts: [
+              {
+                id: 13,
+                name: `github-pages`,
+                size_in_bytes: 1400
+              },
+              {
+                id: 14,
+                name: `github-pages`,
+                size_in_bytes: 1620
+              }
+            ]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `Multiple artifact unexpectedly found for workflow run ${process.env.GITHUB_RUN_ID}. Artifact count is 2.`
+      )
+    })
+
+    it('fails if there are no artifacts found', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(
+          200,
+          {
+            total_count: 0,
+            artifacts: []
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `No artifacts found for workflow run ${process.env.GITHUB_RUN_ID}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+      )
+    })
+
+    it('fails with error message if list artifact endpoint returns 500', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
+        })
+        .reply(500, { message: 'oh no' }, { headers: { 'content-type': 'application/json' } })
+
+      const deployment = new Deployment()
+      await expect(deployment.create(fakeJwt)).rejects.toThrow(
+        `Failed to create deployment (status: 500) with build version valid-build-version. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+      )
     })
 
     it('warns if the artifact size is bigger than maximum', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
       const artifactSize = ONE_GIGABYTE + 1
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://fake-artifact.com', name: 'github-pages', size: `${artifactSize}` },
-            { url: 'https://another-artifact.com', name: 'another-artifact' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 12, name: `github-pages`, size_in_bytes: artifactSize }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -355,10 +469,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 12 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -383,21 +497,24 @@ describe('Deployment', () => {
       expect(core.info).toHaveBeenLastCalledWith(
         expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
       )
-
-      artifactExchangeScope.done()
     })
 
     it('warns when the timeout is greater than the maximum allowed', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -408,10 +525,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -450,8 +567,6 @@ describe('Deployment', () => {
       expect(core.warning).toBeCalledWith(
         `Warning: timeout value is greater than the allowed maximum - timeout set to the maximum of ${MAX_TIMEOUT} milliseconds.`
       )
-
-      artifactExchangeScope.done()
     })
   })
 
@@ -459,14 +574,19 @@ describe('Deployment', () => {
     it('sets output to success when deployment is successful', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -477,10 +597,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -511,8 +631,6 @@ describe('Deployment', () => {
 
       expect(core.setOutput).toBeCalledWith('status', 'succeed')
       expect(core.info).toHaveBeenLastCalledWith('Reported success!')
-
-      artifactExchangeScope.done()
     })
 
     it('fails check when no deployment is found', async () => {
@@ -525,14 +643,19 @@ describe('Deployment', () => {
     it('exits early when deployment is not in progress', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -543,10 +666,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -568,21 +691,24 @@ describe('Deployment', () => {
       deployment.deploymentInfo.pending = false
       await deployment.check()
       expect(core.setFailed).toBeCalledWith('Unable to get deployment status.')
-
-      artifactExchangeScope.done()
     })
 
     it('enforces max timeout', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -593,10 +719,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -664,21 +790,24 @@ describe('Deployment', () => {
       expect(deployment.timeout).toEqual(MAX_TIMEOUT)
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
       expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
-
-      artifactExchangeScope.done()
     })
 
     it('sets timeout to user timeout if user timeout is less than max timeout', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -689,10 +818,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -749,21 +878,24 @@ describe('Deployment', () => {
       expect(deployment.timeout).toEqual(42)
       expect(core.error).toBeCalledWith('Timeout reached, aborting!')
       expect(core.setFailed).toBeCalledWith('Timeout reached, aborting!')
-
-      artifactExchangeScope.done()
     })
 
     it('sets output to success when timeout is set but not reached', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -774,10 +906,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -835,8 +967,6 @@ describe('Deployment', () => {
       expect(core.error).not.toBeCalled()
       expect(core.setOutput).toBeCalledWith('status', 'succeed')
       expect(core.info).toHaveBeenLastCalledWith('Reported success!')
-
-      artifactExchangeScope.done()
     })
   })
 
@@ -844,14 +974,19 @@ describe('Deployment', () => {
     it('can successfully cancel a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -862,10 +997,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -897,8 +1032,6 @@ describe('Deployment', () => {
       await deployment.cancel()
 
       expect(core.info).toHaveBeenLastCalledWith(`Canceled deployment with ID ${process.env.GITHUB_SHA}`)
-
-      artifactExchangeScope.done()
     })
 
     it('can exit if a pages deployment was not created and none need to be cancelled', async () => {
@@ -917,14 +1050,19 @@ describe('Deployment', () => {
     it('catches an error when trying to cancel a deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
-      const artifactExchangeScope = nock(`http://my-url`)
-        .get('/_apis/pipelines/workflows/123/artifacts?api-version=6.0-preview')
-        .reply(200, {
-          value: [
-            { url: 'https://another-artifact.com', name: 'another-artifact' },
-            { url: 'https://fake-artifact.com', name: 'github-pages' }
-          ]
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}/artifacts?name=github-pages`,
+          method: 'GET'
         })
+        .reply(
+          200,
+          {
+            total_count: 1,
+            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
 
       mockPool
         .intercept({
@@ -935,10 +1073,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_url' &&
+              keys[0] === 'artifact_id' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_url === 'https://fake-artifact.com&%24expand=SignedContent' &&
+              body.artifact_id === 11 &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -970,8 +1108,6 @@ describe('Deployment', () => {
       await deployment.cancel()
 
       expect(core.error).toHaveBeenCalledWith(`Canceling Pages deployment failed`, expect.anything())
-
-      artifactExchangeScope.done()
     })
   })
 })
