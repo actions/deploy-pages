@@ -30,6 +30,7 @@ jobs:
     permissions:
       pages: write      # to deploy to Pages
       id-token: write   # to verify the deployment originates from an appropriate source
+      actions: read     # to download an artifact uploaded by `actions/upload-pages-artifact@v3`
 
     # Deploy to the github-pages environment
     environment:
@@ -76,7 +77,7 @@ There are a few important considerations to be aware of:
 2. The job that executes the deployment must at minimum have the following permissions:
    - `pages: write`
    - `id-token: write`
-   - `actions: write`
+   - `actions: read`
 
 3. The deployment should target the `github-pages` environment (you may use a different environment name if needed, but this is not recommended.)
 
