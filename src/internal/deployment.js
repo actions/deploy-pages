@@ -63,11 +63,7 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getArtifactMetadata({
-        githubToken: this.githubToken,
-        runId: this.workflowRun,
-        artifactName: this.artifactName
-      })
+      const artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
 
       if (artifactData?.size > ONE_GIGABYTE) {
         core.warning(

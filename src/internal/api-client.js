@@ -1,47 +1,38 @@
 const core = require('@actions/core')
 const github = require('@actions/github')
+const { DefaultArtifactClient } = require('@actions/artifact')
 
-async function getArtifactMetadata({ githubToken, runId, artifactName }) {
-  const octokit = github.getOctokit(githubToken)
+async function getArtifactMetadata({ artifactName }) {
+  const artifactClient = new DefaultArtifactClient()
 
   try {
-    core.info(`Fetching artifact metadata for ${artifactName} in run ${runId}`)
+    core.info(`Fetching artifact metadata for ${artifactName} in this workflow run`)
 
-    const response = await octokit.request(
-      'GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}',
-      {
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        run_id: runId,
-        artifactName: artifactName
-      }
-    )
+    const response = await artifactClient.listArtifacts()
 
-    const artifactCount = response.data.total_count
+    const filteredArtifacts = response.artifacts.filter(artifact => artifact.name === artifactName)
+
+    const artifactCount = filteredArtifacts.length
     core.debug(`List artifact count: ${artifactCount}`)
 
     if (artifactCount === 0) {
       throw new Error(
-        `No artifacts found for workflow run ${runId}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+        'No artifacts found for this workflow run. Ensure artifacts are uploaded with actions/artifact@v4 or later.'
       )
     } else if (artifactCount > 1) {
       throw new Error(
-        `Multiple artifact unexpectedly found for workflow run ${runId}. Artifact count is ${artifactCount}.`
+        `Multiple artifacts unexpectedly found for this workflow run. Artifact count is ${artifactCount}.`
       )
     }
 
-    const artifact = response.data.artifacts[0]
+    const artifact = filteredArtifacts[0]
     core.debug(`Artifact: ${JSON.stringify(artifact)}`)
 
-    const artifactSize = artifact.size_in_bytes
-    if (!artifactSize) {
+    if (!artifact.size) {
       core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
     }
 
-    return {
-      id: artifact.id,
-      size: artifactSize
-    }
+    return artifact
   } catch (error) {
     core.error(
       'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
