@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3 # or specific "vX.X.X" version tag for this action
+        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
 ```
 
 ### Inputs 📥
@@ -76,6 +76,7 @@ There are a few important considerations to be aware of:
 2. The job that executes the deployment must at minimum have the following permissions:
    - `pages: write`
    - `id-token: write`
+   - `actions: write`
 
 3. The deployment should target the `github-pages` environment (you may use a different environment name if needed, but this is not recommended.)
 
@@ -89,6 +90,7 @@ This action is primarily designed for use with GitHub.com's Actions workflows an
 
 | Release | GHES Compatibility |
 |:---|:---|
+| [`v4`](https://github.com/actions/deploy-pages/releases/tag/v4) | :warning: none |
 | [`v3`](https://github.com/actions/deploy-pages/releases/tag/v3) | `>= 3.9` |
 | `v3.x.x` | `>= 3.9` |
 | [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | `>= 3.9` |
