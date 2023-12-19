@@ -91,7 +91,7 @@ This action is primarily designed for use with GitHub.com's Actions workflows an
 
 | Release | GHES Compatibility |
 |:---|:---|
-| [`v4`](https://github.com/actions/deploy-pages/releases/tag/v4) | :information_source: TBD |
+| [`v4`](https://github.com/actions/deploy-pages/releases/tag/v4) | :warning: Incompatible at this time |
 | [`v3`](https://github.com/actions/deploy-pages/releases/tag/v3) | `>= 3.9` |
 | `v3.x.x` | `>= 3.9` |
 | [`v2`](https://github.com/actions/deploy-pages/releases/tag/v2) | `>= 3.9` |
