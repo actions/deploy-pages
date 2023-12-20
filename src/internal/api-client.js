@@ -38,8 +38,13 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
       core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
     }
 
+    const artifactRaw = await octokit.request({
+      method: 'HEAD',
+      url: artifact.archive_download_url
+    })
+
     return {
-      id: artifact.id,
+      url: artifactRaw.url,
       size: artifactSize
     }
   } catch (error) {
@@ -51,11 +56,11 @@ async function getArtifactMetadata({ githubToken, runId, artifactName }) {
   }
 }
 
-async function createPagesDeployment({ githubToken, artifactId, buildVersion, idToken, isPreview = false }) {
+async function createPagesDeployment({ githubToken, artifactUrl, buildVersion, idToken, isPreview = false }) {
   const octokit = github.getOctokit(githubToken)
 
   const payload = {
-    artifact_id: artifactId,
+    artifact_url: artifactUrl,
     pages_build_version: buildVersion,
     oidc_token: idToken
   }

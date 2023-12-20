@@ -77,7 +77,7 @@ class Deployment {
 
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactId: artifactData.id,
+        artifactUrl: artifactData.url,
         buildVersion: this.buildVersion,
         idToken,
         isPreview: this.isPreview
