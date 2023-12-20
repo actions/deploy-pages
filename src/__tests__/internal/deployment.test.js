@@ -4,6 +4,9 @@ const { MockAgent, setGlobalDispatcher } = require('undici')
 
 const { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION } = require('../../internal/deployment')
 
+const fakeArtifactUrl =
+  'https://productionresultssa0.blob.core.windows.net/actions-results/6f4ea6ff-3228-4faf-b887-3ed915779256/workflow-job-run-74d7b663-1d1e-43fd-9395-11f0c080544c/artifacts/github-pages.zip'
+
 const fakeJwt =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
 
@@ -52,6 +55,13 @@ describe('Deployment', () => {
     mockAgent.disableNetConnect()
     setGlobalDispatcher(mockAgent)
     mockPool = mockAgent.get('https://api.github.com')
+    mockAgent
+      .get('https://productionresultssa0.blob.core.windows.net')
+      .intercept({
+        path: '/actions-results/6f4ea6ff-3228-4faf-b887-3ed915779256/workflow-job-run-74d7b663-1d1e-43fd-9395-11f0c080544c/artifacts/github-pages.zip',
+        method: 'HEAD'
+      })
+      .reply(200)
   })
 
   describe('#create', () => {
@@ -72,10 +82,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, undefined, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -86,10 +114,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA &&
               body.oidc_token === fakeJwt
             )
@@ -128,10 +156,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -142,11 +188,11 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 4 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
               keys[3] === 'preview' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA &&
               body.oidc_token === fakeJwt &&
               body.preview === true
@@ -208,10 +254,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -222,9 +286,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -251,10 +315,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -265,9 +347,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -294,10 +376,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -308,9 +408,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -337,10 +437,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -351,9 +469,9 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 2 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
           }
@@ -385,12 +503,14 @@ describe('Deployment', () => {
               {
                 id: 13,
                 name: `github-pages`,
-                size_in_bytes: 1400
+                size_in_bytes: 1400,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/13/zip`
               },
               {
                 id: 14,
                 name: `github-pages`,
-                size_in_bytes: 1620
+                size_in_bytes: 1620,
+                archive_download_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/14/zip`
               }
             ]
           },
@@ -455,10 +575,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 12, name: `github-pages`, size_in_bytes: artifactSize }]
+            artifacts: [
+              {
+                id: 12,
+                name: `github-pages`,
+                size_in_bytes: artifactSize,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/12/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/12/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -469,10 +607,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 12 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -511,10 +649,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -525,10 +681,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -583,10 +739,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -597,10 +771,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -652,10 +826,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -666,10 +858,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -705,10 +897,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -719,10 +929,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -804,10 +1014,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -818,10 +1046,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -892,10 +1120,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -906,10 +1152,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -983,10 +1229,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -997,10 +1261,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
@@ -1059,10 +1323,28 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ id: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [
+              {
+                id: 11,
+                name: `github-pages`,
+                size_in_bytes: 221,
+                archive_download_url: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`
+              }
+            ]
           },
           { headers: { 'content-type': 'application/json' } }
         )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/actions/artifacts/11/zip`,
+          method: 'HEAD'
+        })
+        .reply(302, null, {
+          headers: {
+            location: fakeArtifactUrl
+          }
+        })
 
       mockPool
         .intercept({
@@ -1073,10 +1355,10 @@ describe('Deployment', () => {
             const keys = Object.keys(body).sort()
             return (
               keys.length === 3 &&
-              keys[0] === 'artifact_id' &&
+              keys[0] === 'artifact_url' &&
               keys[1] === 'oidc_token' &&
               keys[2] === 'pages_build_version' &&
-              body.artifact_id === 11 &&
+              body.artifact_url === fakeArtifactUrl &&
               body.oidc_token === fakeJwt &&
               body.pages_build_version === process.env.GITHUB_SHA
             )
