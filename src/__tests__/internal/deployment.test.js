@@ -19,6 +19,9 @@ describe('Deployment', () => {
     process.env.GITHUB_ACTOR = 'monalisa'
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
+    // A valid actions token must have an 'scp' field whose value is a space-delimited list of strings
+    process.env.ACTIONS_RUNTIME_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY3AiOiJBY3Rpb25zLkV4YW1wbGVTY29wZSBBY3Rpb25zLlJlc3VsdHM6Y2U3ZjU0YzctNjFjNy00YWFlLTg4N2YtMzBkYTQ3NWY1ZjFhOmNhMzk1MDg1LTA0MGEtNTI2Yi0yY2U4LWJkYzg1ZjY5Mjc3NCJ9.l-VcBU1PeNk_lWpOhjWehQlYyjCcY2dp_EMt7Rf06io"
+    process.env.ACTIONS_RESULTS_URL = "https://actions-results-url.biz"
 
     jest.spyOn(core, 'getInput').mockImplementation(param => {
       switch (param) {
