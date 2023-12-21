@@ -76,7 +76,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -130,7 +130,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -206,7 +206,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -247,7 +247,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -288,7 +288,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -329,7 +329,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -372,8 +372,8 @@ describe('Deployment', () => {
           {
             total_count: 1,
             artifacts: [
-              { databaseId: 13, name: `github-pages`, size_in_bytes: 1400 },
-              { databaseId: 14, name: `github-pages`, size_in_bytes: 1620 },
+              { databaseId: 13, name: `github-pages`, size: 1400 },
+              { databaseId: 14, name: `github-pages`, size: 1620 },
             ]
           },
           { headers: { 'content-type': 'application/json' } }
@@ -431,7 +431,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 12, name: `github-pages`, size_in_bytes: artifactSize }]
+            artifacts: [{ databaseId: 12, name: `github-pages`, size: artifactSize }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -485,7 +485,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -555,7 +555,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -622,7 +622,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -673,7 +673,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -770,7 +770,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -856,7 +856,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -945,7 +945,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
@@ -1019,7 +1019,7 @@ describe('Deployment', () => {
           200,
           {
             total_count: 1,
-            artifacts: [{ databaseId: 11, name: `github-pages`, size_in_bytes: 221 }]
+            artifacts: [{ databaseId: 11, name: `github-pages`, size: 221 }]
           },
           { headers: { 'content-type': 'application/json' } }
         )
