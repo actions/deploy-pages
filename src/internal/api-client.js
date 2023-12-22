@@ -59,7 +59,8 @@ async function getArtifactMetadata({ artifactName }) {
     url: `${getArtifactsServiceOrigin()}/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts`,
     headers: {
       'content-type': 'application/json'
-    }
+    },
+    body: {}
   }
 
   try {
