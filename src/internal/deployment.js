@@ -58,11 +58,11 @@ class Deployment {
     const timeoutInput = Number(core.getInput('timeout'))
     this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
 
-    core.debug(`Actor: ${this.buildActor}`)
-    core.debug(`Action ID: ${this.actionsId}`)
-    core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
-
     try {
+      core.debug(`Actor: ${this.buildActor}`)
+      core.debug(`Action ID: ${this.actionsId}`)
+      core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
+
       const artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
 
       if (artifactData?.size > ONE_GIGABYTE) {
