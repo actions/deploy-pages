@@ -186,13 +186,13 @@ describe('Deployment', () => {
 
       const twirpScope = nock(process.env.ACTIONS_RESULTS_URL)
         .post(LIST_ARTIFACTS_TWIRP_PATH)
-        .reply(400, { message: 'Bad request' }, { headers: { 'content-type': 'application/json' } })
+        .reply(400, { msg: 'yikes!' }, { 'content-type': 'application/json' })
 
       // Create the deployment
       const deployment = new Deployment()
       await expect(deployment.create()).rejects.toEqual(
         new Error(
-          `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}. Responded with: Bad request`
+          `Failed to create deployment: Failed to ListArtifacts: Received non-retryable error: Failed request: (400) null: yikes!`
         )
       )
       twirpScope.done()
@@ -407,16 +407,16 @@ describe('Deployment', () => {
       twirpScope.done()
     })
 
-    it('fails with error message if list artifact endpoint returns 500', async () => {
+    it('fails with error message if list artifact endpoint returns 501', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const twirpScope = nock(process.env.ACTIONS_RESULTS_URL)
         .post(LIST_ARTIFACTS_TWIRP_PATH)
-        .reply(500, { message: 'oh no' }, { headers: { 'content-type': 'application/json' } })
+        .reply(501, { msg: 'oh no' }, { headers: { 'content-type': 'application/json' } })
 
       const deployment = new Deployment()
       await expect(deployment.create(fakeJwt)).rejects.toThrow(
-        `Failed to create deployment (status: 500) with build version valid-build-version. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
+        `Failed to create deployment: Failed to ListArtifacts: Received non-retryable error: Failed request: (501) null: oh no`
       )
       twirpScope.done()
     })

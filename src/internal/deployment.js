@@ -58,19 +58,24 @@ class Deployment {
     const timeoutInput = Number(core.getInput('timeout'))
     this.timeout = !timeoutInput || timeoutInput <= 0 ? MAX_TIMEOUT : Math.min(timeoutInput, MAX_TIMEOUT)
 
+    core.debug(`Actor: ${this.buildActor}`)
+    core.debug(`Action ID: ${this.actionsId}`)
+    core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
+
+    let artifactData
     try {
-      core.debug(`Actor: ${this.buildActor}`)
-      core.debug(`Action ID: ${this.actionsId}`)
-      core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
+      artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
+    } catch (error) {
+      throw new Error(`Failed to create deployment: ${error.message}`)
+    }
 
-      const artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
+    if (artifactData?.size > ONE_GIGABYTE) {
+      core.warning(
+        `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
+      )
+    }
 
-      if (artifactData?.size > ONE_GIGABYTE) {
-        core.warning(
-          `Uploaded artifact size of ${artifactData?.size} bytes exceeds the allowed size of ${SIZE_LIMIT_DESCRIPTION}. Deployment might fail.`
-        )
-      }
-
+    try {
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
         artifactId: artifactData.id,
