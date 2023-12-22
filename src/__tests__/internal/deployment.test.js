@@ -194,7 +194,7 @@ describe('Deployment', () => {
       )
       expect(core.error).toHaveBeenNthCalledWith(
         1,
-        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
         expect.any(Error)
       )
       twirpScope.done()
@@ -416,7 +416,7 @@ describe('Deployment', () => {
       )
       expect(core.error).toHaveBeenNthCalledWith(
         1,
-        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
         expect.any(Error)
       )
 

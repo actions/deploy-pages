@@ -99,7 +99,7 @@ async function getArtifactMetadata({ artifactName }) {
     return artifact
   } catch (error) {
     core.error(
-      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
       error
     )
     throw error
