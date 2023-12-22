@@ -9,7 +9,7 @@ const { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION } = requir
 const fakeJwt =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
 
-const LIST_ARTIFACTS_TWIRP_PATH = '/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts';
+const LIST_ARTIFACTS_TWIRP_PATH = '/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts'
 
 describe('Deployment', () => {
   let mockPool
@@ -24,8 +24,9 @@ describe('Deployment', () => {
     process.env.GITHUB_ACTION = '__monalisa/octocat'
     process.env.GITHUB_ACTION_PATH = 'something'
     // A valid actions token must have an 'scp' field whose value is a space-delimited list of strings
-    process.env.ACTIONS_RUNTIME_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY3AiOiJBY3Rpb25zLkV4YW1wbGVTY29wZSBBY3Rpb25zLlJlc3VsdHM6Y2U3ZjU0YzctNjFjNy00YWFlLTg4N2YtMzBkYTQ3NWY1ZjFhOmNhMzk1MDg1LTA0MGEtNTI2Yi0yY2U4LWJkYzg1ZjY5Mjc3NCJ9.l-VcBU1PeNk_lWpOhjWehQlYyjCcY2dp_EMt7Rf06io"
-    process.env.ACTIONS_RESULTS_URL = "https://actions-results-url.biz"
+    process.env.ACTIONS_RUNTIME_TOKEN =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY3AiOiJBY3Rpb25zLkV4YW1wbGVTY29wZSBBY3Rpb25zLlJlc3VsdHM6Y2U3ZjU0YzctNjFjNy00YWFlLTg4N2YtMzBkYTQ3NWY1ZjFhOmNhMzk1MDg1LTA0MGEtNTI2Yi0yY2U4LWJkYzg1ZjY5Mjc3NCJ9.l-VcBU1PeNk_lWpOhjWehQlYyjCcY2dp_EMt7Rf06io'
+    process.env.ACTIONS_RESULTS_URL = 'https://actions-results-url.biz'
 
     jest.spyOn(core, 'getInput').mockImplementation(param => {
       switch (param) {
@@ -373,7 +374,7 @@ describe('Deployment', () => {
             total_count: 1,
             artifacts: [
               { databaseId: 13, name: `github-pages`, size: 1400 },
-              { databaseId: 14, name: `github-pages`, size: 1620 },
+              { databaseId: 14, name: `github-pages`, size: 1620 }
             ]
           },
           { headers: { 'content-type': 'application/json' } }
