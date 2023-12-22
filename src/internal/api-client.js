@@ -1,16 +1,80 @@
 const core = require('@actions/core')
 const github = require('@actions/github')
 const { DefaultArtifactClient } = require('@actions/artifact')
+const { RequestError } = require('@octokit/request-error')
+const HttpStatusMessages = require('http-status-messages')
+
+function wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions) {
+  // Specific response shape aligned with Octokit
+  const response = {
+    url: requestOptions.url,
+    status: 200,
+    headers: {
+      ...requestOptions.headers
+    },
+    data: twirpResponse
+  }
+  return response
+}
+
+// Mimic the errors thrown by Octokit for consistency.
+function wrapTwirpErrorLikeOctokit(twirpError, requestOptions) {
+  const rawErrorMsg = twirpError?.message || twirpError?.toString() || ''
+  const statusCodeMatch = rawErrorMsg.match(/Failed request: \((?<statusCode>\d+)\)/)
+  const statusCode = statusCodeMatch?.groups?.statusCode ?? 500
+
+  // Try to provide the best error message
+  const errorMsg =
+    rawErrorMsg ||
+    // Fallback to the HTTP status message based on the status code
+    HttpStatusMessages[statusCode] ||
+    // Or if the status code is unexpected...
+    `Unknown error (${statusCode})`
+
+  // RequestError is an Octokit-specific class
+  return new RequestError(errorMsg, statusCode, {
+    response: {
+      url: requestOptions.url,
+      status: statusCode,
+      headers: {
+        ...requestOptions.headers
+      },
+      data: rawErrorMsg ? { message: rawErrorMsg } : ''
+    },
+    request: requestOptions
+  })
+}
+
+function getArtifactsServiceOrigin() {
+  const resultsUrl = process.env.ACTIONS_RESULTS_URL
+  return resultsUrl ? new URL(resultsUrl).origin : ''
+}
 
 async function getArtifactMetadata({ artifactName }) {
   const artifactClient = new DefaultArtifactClient()
 
+  // Primarily for debugging purposes, accuracy is not critical
+  const requestOptions = {
+    method: 'POST',
+    url: `${getArtifactsServiceOrigin()}/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts`,
+    headers: {
+      'content-type': 'application/json'
+    }
+  }
+
   try {
     core.info(`Fetching artifact metadata for ${artifactName} in this workflow run`)
 
-    const response = await artifactClient.listArtifacts()
+    let response
+    try {
+      const twirpResponse = await artifactClient.listArtifacts()
+      response = wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions)
+    } catch (twirpError) {
+      const octokitError = wrapTwirpErrorLikeOctokit(twirpError, requestOptions)
+      throw octokitError
+    }
 
-    const filteredArtifacts = response.artifacts.filter(artifact => artifact.name === artifactName)
+    const filteredArtifacts = response.data.artifacts.filter(artifact => artifact.name === artifactName)
 
     const artifactCount = filteredArtifacts.length
     core.debug(`List artifact count: ${artifactCount}`)
