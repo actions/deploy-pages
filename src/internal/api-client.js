@@ -63,7 +63,7 @@ async function getArtifactMetadata({ artifactName }) {
   }
 
   try {
-    core.info(`Fetching artifact metadata for ${artifactName} in this workflow run`)
+    core.info(`Fetching artifact metadata for "${artifactName}" in this workflow run`)
 
     let response
     try {
@@ -82,11 +82,11 @@ async function getArtifactMetadata({ artifactName }) {
 
     if (artifactCount === 0) {
       throw new Error(
-        'No artifacts found for this workflow run. Ensure artifacts are uploaded with actions/artifact@v4 or later.'
+        `No artifacts named "${artifactName}" were found for this workflow run. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
       )
     } else if (artifactCount > 1) {
       throw new Error(
-        `Multiple artifacts unexpectedly found for this workflow run. Artifact count is ${artifactCount}.`
+        `Multiple artifacts named "${artifactName}" were unexpectedly found for this workflow run. Artifact count is ${artifactCount}.`
       )
     }
 
