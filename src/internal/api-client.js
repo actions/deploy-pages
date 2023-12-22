@@ -1,50 +1,107 @@
 const core = require('@actions/core')
 const github = require('@actions/github')
+const { DefaultArtifactClient } = require('@actions/artifact')
+const { RequestError } = require('@octokit/request-error')
+const HttpStatusMessages = require('http-status-messages')
 
-async function getArtifactMetadata({ githubToken, runId, artifactName }) {
-  const octokit = github.getOctokit(githubToken)
+function wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions) {
+  // Specific response shape aligned with Octokit
+  const response = {
+    url: requestOptions.url,
+    status: 200,
+    headers: {
+      ...requestOptions.headers
+    },
+    data: twirpResponse
+  }
+  return response
+}
+
+// Mimic the errors thrown by Octokit for consistency.
+function wrapTwirpErrorLikeOctokit(twirpError, requestOptions) {
+  const rawErrorMsg = twirpError?.message || twirpError?.toString() || ''
+  const statusCodeMatch = rawErrorMsg.match(/Failed request: \((?<statusCode>\d+)\)/)
+  const statusCode = statusCodeMatch?.groups?.statusCode ?? 500
+
+  // Try to provide the best error message
+  const errorMsg =
+    rawErrorMsg ||
+    // Fallback to the HTTP status message based on the status code
+    HttpStatusMessages[statusCode] ||
+    // Or if the status code is unexpected...
+    `Unknown error (${statusCode})`
+
+  // RequestError is an Octokit-specific class
+  return new RequestError(errorMsg, statusCode, {
+    response: {
+      url: requestOptions.url,
+      status: statusCode,
+      headers: {
+        ...requestOptions.headers
+      },
+      data: rawErrorMsg ? { message: rawErrorMsg } : ''
+    },
+    request: requestOptions
+  })
+}
+
+function getArtifactsServiceOrigin() {
+  const resultsUrl = process.env.ACTIONS_RESULTS_URL
+  return resultsUrl ? new URL(resultsUrl).origin : ''
+}
+
+async function getArtifactMetadata({ artifactName }) {
+  const artifactClient = new DefaultArtifactClient()
+
+  // Primarily for debugging purposes, accuracy is not critical
+  const requestOptions = {
+    method: 'POST',
+    url: `${getArtifactsServiceOrigin()}/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts`,
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: {}
+  }
 
   try {
-    core.info(`Fetching artifact metadata for ${artifactName} in run ${runId}`)
+    core.info(`Fetching artifact metadata for "${artifactName}" in this workflow run`)
 
-    const response = await octokit.request(
-      'GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts?name={artifactName}',
-      {
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        run_id: runId,
-        artifactName: artifactName
-      }
-    )
+    let response
+    try {
+      const twirpResponse = await artifactClient.listArtifacts()
+      response = wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions)
+    } catch (twirpError) {
+      core.error('Listing artifact metadata failed', twirpError)
+      const octokitError = wrapTwirpErrorLikeOctokit(twirpError, requestOptions)
+      throw octokitError
+    }
 
-    const artifactCount = response.data.total_count
+    const filteredArtifacts = response.data.artifacts.filter(artifact => artifact.name === artifactName)
+
+    const artifactCount = filteredArtifacts.length
     core.debug(`List artifact count: ${artifactCount}`)
 
     if (artifactCount === 0) {
       throw new Error(
-        `No artifacts found for workflow run ${runId}. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+        `No artifacts named "${artifactName}" were found for this workflow run. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
       )
     } else if (artifactCount > 1) {
       throw new Error(
-        `Multiple artifact unexpectedly found for workflow run ${runId}. Artifact count is ${artifactCount}.`
+        `Multiple artifacts named "${artifactName}" were unexpectedly found for this workflow run. Artifact count is ${artifactCount}.`
       )
     }
 
-    const artifact = response.data.artifacts[0]
+    const artifact = filteredArtifacts[0]
     core.debug(`Artifact: ${JSON.stringify(artifact)}`)
 
-    const artifactSize = artifact.size_in_bytes
-    if (!artifactSize) {
+    if (!artifact.size) {
       core.warning('Artifact size was not found. Unable to verify if artifact size exceeds the allowed size.')
     }
 
-    return {
-      id: artifact.id,
-      size: artifactSize
-    }
+    return artifact
   } catch (error) {
     core.error(
-      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+      'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
       error
     )
     throw error

@@ -63,11 +63,7 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getArtifactMetadata({
-        githubToken: this.githubToken,
-        runId: this.workflowRun,
-        artifactName: this.artifactName
-      })
+      const artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
 
       if (artifactData?.size > ONE_GIGABYTE) {
         core.warning(
@@ -102,14 +98,14 @@ class Deployment {
 
       // build customized error message based on server response
       if (error.response) {
-        let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}. `
+        let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}.`
         if (error.status === 400) {
-          errorMessage += `Responded with: ${error.message}`
+          errorMessage += ` Responded with: ${error.message}`
         } else if (error.status === 403) {
-          errorMessage += 'Ensure GITHUB_TOKEN has permission "pages: write".'
+          errorMessage += ' Ensure GITHUB_TOKEN has permission "pages: write".'
         } else if (error.status === 404) {
           const pagesSettingsUrl = `${this.githubServerUrl}/${this.repositoryNwo}/settings/pages`
-          errorMessage += `Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
+          errorMessage += ` Ensure GitHub Pages has been enabled: ${pagesSettingsUrl}`
           // If using GHES, add a special note about compatibility
           if (new URL(this.githubServerUrl).hostname.toLowerCase() !== 'github.com') {
             errorMessage +=
@@ -117,7 +113,7 @@ class Deployment {
           }
         } else if (error.status >= 500) {
           errorMessage +=
-            'Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
+            ' Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.'
         }
         throw new Error(errorMessage)
       } else {
