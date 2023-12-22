@@ -70,6 +70,7 @@ async function getArtifactMetadata({ artifactName }) {
       const twirpResponse = await artifactClient.listArtifacts()
       response = wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions)
     } catch (twirpError) {
+      core.error('Listing artifact metadata failed', twirpError)
       const octokitError = wrapTwirpErrorLikeOctokit(twirpError, requestOptions)
       throw octokitError
     }

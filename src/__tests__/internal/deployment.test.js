@@ -194,6 +194,11 @@ describe('Deployment', () => {
       )
       expect(core.error).toHaveBeenNthCalledWith(
         1,
+        'Listing artifact metadata failed',
+        new Error('Failed to ListArtifacts: Received non-retryable error: Failed request: (400) null: yikes!')
+      )
+      expect(core.error).toHaveBeenNthCalledWith(
+        2,
         'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
         expect.any(Error)
       )
@@ -416,6 +421,11 @@ describe('Deployment', () => {
       )
       expect(core.error).toHaveBeenNthCalledWith(
         1,
+        'Listing artifact metadata failed',
+        new Error('Failed to ListArtifacts: Received non-retryable error: Failed request: (501) null: oh no')
+      )
+      expect(core.error).toHaveBeenNthCalledWith(
+        2,
         'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages, or Actions? Please re-run the deployment at a later time.',
         expect.any(Error)
       )
