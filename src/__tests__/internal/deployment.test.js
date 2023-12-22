@@ -189,10 +189,13 @@ describe('Deployment', () => {
 
       // Create the deployment
       const deployment = new Deployment()
-      await expect(deployment.create()).rejects.toEqual(
-        new Error(
-          `Failed to create deployment: Failed to ListArtifacts: Received non-retryable error: Failed request: (400) null: yikes!`
-        )
+      await expect(deployment.create()).rejects.toThrow(
+        `Failed to create deployment (status: 400) with build version ${process.env.GITHUB_SHA}.`
+      )
+      expect(core.error).toHaveBeenNthCalledWith(
+        1,
+        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+        expect.any(Error)
       )
       twirpScope.done()
     })
@@ -409,8 +412,14 @@ describe('Deployment', () => {
 
       const deployment = new Deployment()
       await expect(deployment.create(fakeJwt)).rejects.toThrow(
-        `Failed to create deployment: Failed to ListArtifacts: Received non-retryable error: Failed request: (501) null: oh no`
+        `Failed to create deployment (status: 501) with build version ${process.env.GITHUB_SHA}. Server error, is githubstatus.com reporting a Pages outage? Please re-run the deployment at a later time.`
       )
+      expect(core.error).toHaveBeenNthCalledWith(
+        1,
+        'Fetching artifact metadata failed. Is githubstatus.com reporting issues with API requests, Pages or Actions? Please re-run the deployment at a later time.',
+        expect.any(Error)
+      )
+
       twirpScope.done()
     })
 
