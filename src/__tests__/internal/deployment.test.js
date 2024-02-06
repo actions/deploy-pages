@@ -403,7 +403,7 @@ describe('Deployment', () => {
 
       const deployment = new Deployment()
       await expect(deployment.create(fakeJwt)).rejects.toThrow(
-        `No artifacts named "github-pages" were found for this workflow run. Ensure artifacts are uploaded with actions/artifact@v4 or later.`
+        `No artifacts named "github-pages" were found for this workflow run. Ensure artifacts are uploaded with actions/upload-artifact@v4 or later.`
       )
       twirpScope.done()
     })
