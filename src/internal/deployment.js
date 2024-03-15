@@ -99,6 +99,9 @@ class Deployment {
       // build customized error message based on server response
       if (error.response) {
         let errorMessage = `Failed to create deployment (status: ${error.status}) with build version ${this.buildVersion}.`
+        if (error.response.headers['x-github-request-id']) {
+          errorMessage += ` Request ID ${error.response.headers['x-github-request-id']}`
+        }
         if (error.status === 400) {
           errorMessage += ` Responded with: ${error.message}`
         } else if (error.status === 403) {
