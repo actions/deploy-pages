@@ -19,7 +19,7 @@
     "make-coverage-badge": "^1.2.0",
     "nock": "^13.5.3",
     "prettier": "^3.2.5",
-    "undici": "^6.6.2"
+    "undici": "^6.11.1"
   },
   "scripts": {
     "all": "npm run format && npm run lint && npm run prepare && npm run test && npm run coverage-badge",
