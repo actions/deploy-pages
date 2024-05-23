@@ -89,8 +89,8 @@ When we invoke a job using GitHub Actions the job requests an OIDC token from Gi
 OIDC tokens are minted within the context of a single job, and are used to form a trust relationship which validates properties of the workflow run against a third-party (e.g. cloud providers such as AWS or Azure). In the context of GitHub Pages, this is most relevant to ensure a workflow respects branch protection settings. To do this, the OIDC token includes a claim about which branch/ref is executing the workflow. The token is passed to the pages deployment API as part of the request payload, where it's decoded internally to validate the claims and verify if that workflow is allowed to deploy to pages.
 results in the former statement.
 
-A common misconception is that the OICD tokens we generate are "dangerous" this is not the case. What **can be** is what we allow a third-party to do with the OICD token that was minted for us. Another common issue is accessing the REST endpoints from Actions. The GitHub Pages calls to our endpoints from a job perspective are **only** accessible from the Actions API as of today.
-## Compatibility
+A common question regarding OIDC tokens is the use of `pages:write` and `id-token:write`. Ideally, the `GITHUB_TOKEN` would contain both but currently our API for tokens does not operate this way hence the need for
+setting both to `write`. We also encode the JWT token to ensure it can not be tampered with specially considering we support indvidual versioning for the `deploy-pages` action.
 
 This action is primarily designed for use with GitHub.com's Actions workflows and Pages deployments. However, certain releases should also be compatible with GitHub Enterprise Server (GHES) `3.7` and above.
 
