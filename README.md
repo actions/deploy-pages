@@ -83,13 +83,13 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we will configure it by default for you).
 
-### OICD
-When we invoke a job using GitHub Actions the job requests an OICD token from GitHub's OICD provider which responds with a JSON web token (JWT), each token is unique to each workflow job [learn more about OICD tokens](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token).
+### OIDC
+When we invoke a job using GitHub Actions the job requests an OIDC token from GitHub's OIDC provider which responds with a JSON web token (JWT). Each token is unique to each workflow job [learn more about OIDC tokens](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token).
 
-OICD tokens are minted in the in the context of an Action job which help form a trust relationship between GitHub and a third-party (e.g. AWS or Azure) to determine if there's anything to be done. Hence, there is no "permissions" associated with the token itself. For GitHub Pages use cases we allow `id-token: write` to allow the `GITHUB-TOKEN` to make API calls to generate an OICD for us which
+OIDC tokens are minted within the context of a single job, and are used to form a trust relationship which validates properties of the workflow run against a third-party (e.g. cloud providers such as AWS or Azure). In the context of GitHub Pages, this is most relevant to ensure a workflow respects branch protection settings. To do this, the OIDC token includes a claim about which branch/ref is executing the workflow. The token is passed to the pages deployment API as part of the request payload, where it's decoded internally to validate the claims and verify if that workflow is allowed to deploy to pages.
 results in the former statement.
 
-A common misconception is that the OICD tokens we generate are "dangerous" this is not the case! What **can be** is what we allow a third-party to do with the OICD token that was minted for us! Another common issue is accessing the REST endpoints from Actions. The GitHub Pages calls to our endpoints from a job perspective are **only** accessible from the Actions API as of today.
+A common misconception is that the OICD tokens we generate are "dangerous" this is not the case. What **can be** is what we allow a third-party to do with the OICD token that was minted for us. Another common issue is accessing the REST endpoints from Actions. The GitHub Pages calls to our endpoints from a job perspective are **only** accessible from the Actions API as of today.
 ## Compatibility
 
 This action is primarily designed for use with GitHub.com's Actions workflows and Pages deployments. However, certain releases should also be compatible with GitHub Enterprise Server (GHES) `3.7` and above.
