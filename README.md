@@ -91,6 +91,9 @@ A common question regarding OIDC tokens is the use of `pages:write` and `id-toke
 A common question regarding OIDC tokens is the need to use both `pages:write` and `id-token:write`. The pages permission relates to the `GITHUB_TOKEN` by giving it the permissions to create pages deployments when calling the GitHub API. The id-token permission is necessary to request the OIDC JWT token. For more information on the id-token, check the docs on [adding permissions settings](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings)
 A common question regarding OIDC tokens is the need to use both `pages:write` and `id-token:write`. The pages permission relates to the `GITHUB_TOKEN` by giving it the permissions to create pages deployments when calling the GitHub API. The id-token permission is necessary to request the OIDC JWT token. For more information on the id-token, check the docs on [adding permissions settings](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings)
 
+## Compatibility
+
+This action is primarily designed for use with GitHub.com's Actions workflows and Pages deployments. However, certain releases should also be compatible with GitHub Enterprise Server (GHES) `3.7` and above.
 
 | Release | GHES Compatibility |
 |:---|:---|
