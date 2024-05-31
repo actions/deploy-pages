@@ -83,7 +83,7 @@ There are a few important considerations to be aware of:
 
 5. If your Pages site is using GitHub Actions as the source, while not required we highly recommend you also [protect your environment][environment-protection] (we will configure it by default for you).
 
-### OIDC
+## OIDC
 When we invoke a job using GitHub Actions the job requests an OIDC token from GitHub's OIDC provider which responds with a JSON web token (JWT). Each token is unique to each workflow job [learn more about OIDC tokens](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token).
 
 OIDC tokens are minted within the context of a single job, and are used to form a trust relationship which validates properties of the workflow run against a third-party (e.g. cloud providers such as AWS or Azure). In the context of GitHub Pages, this is most relevant to ensure a workflow respects branch protection settings. To do this, the OIDC token includes a claim about which branch/ref is executing the workflow. The token is passed to the pages deployment API as part of the request payload, where it's decoded internally to validate the claims and verify if that workflow is allowed to deploy to pages.
