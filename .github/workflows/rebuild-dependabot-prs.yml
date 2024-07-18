@@ -45,7 +45,7 @@ jobs:
             git add dist/
             git config --local user.name "github-actions[bot]"
             git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "Update distributables after Dependabot 🤖"
+            git commit -m "[dependabot skip] Update distributables after Dependabot 🤖"
             echo "Pushing branch ${{ github.ref_name }}"
             git push origin ${{ github.ref_name }}
           fi
