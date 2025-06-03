@@ -553,6 +553,22 @@ describe('Deployment', () => {
       )
       twirpScope.done()
     })
+
+    it('creates deployment using provided artifact_id and uses it as build version', async () => {
+      process.env.INPUT_ARTIFACT_ID = '1234567890';
+      // Set up the mock for the deployment creation
+      mockPool.intercept({
+        path: '/repos/actions/is-awesome/pages/deployments',
+        method: 'POST',
+        body: bodyString => {
+          const body = JSON.parse(bodyString);
+          return body.artifact_id === '1234567890' && body.pages_build_version === '1234567890';
+        }
+      }).reply(200, { id: '1234567890', status_url: 'https://api.github.com/repos/actions/is-awesome/pages/deployments/1234567890' }, { 'content-type': 'application/json' });
+      const deployment = new Deployment();
+      await deployment.create(fakeJwt);
+      delete process.env.INPUT_ARTIFACT_ID;
+    })
   })
 
   describe('#check', () => {
