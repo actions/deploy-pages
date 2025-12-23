@@ -146,6 +146,8 @@ async function getPagesDeploymentStatus({ githubToken, deploymentId }) {
       deploymentId
     })
 
+    core.info(JSON.stringify(response.data))
+
     return response.data
   } catch (error) {
     core.error('Getting Pages deployment status failed', error)
