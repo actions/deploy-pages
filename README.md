@@ -53,6 +53,7 @@ jobs:
 | `error_count` | `false` | `"10"` | Maximum number of status report errors before cancelling a deployment (default: 10) |
 | `reporting_interval` | `false` | `"5000"` | Time in milliseconds between two deployment status reports (default: 5 seconds) |
 | `artifact_name` | `false` | `"github-pages"` | The name of the artifact to deploy |
+| `artifact_id` | `false` |  | ID of the artifact to deploy (overrides artifact_name if provided) |
 | `preview` | `false` | `"false"` | Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!) |
 
 ### Outputs 📤
@@ -131,3 +132,9 @@ The scripts and documentation in this project are released under the [MIT Licens
 [draft-release]: .github/workflows/draft-release.yml
 [release]: .github/workflows/release.yml
 [release-workflow-runs]: https://github.com/actions/deploy-pages/actions/workflows/release.yml
+
+## File Modification Dates
+
+GitHub Pages deployments will set the modification date of uploaded files to the time of deployment, not the original file's last modified date. This is a limitation of the platform and cannot be changed by this action.
+
+**Note:** If you provide `artifact_id`, it will be used directly for deployment and as the build version for uniqueness. This is useful if you have multiple artifacts with the same name in your workflow run.

@@ -43,6 +43,7 @@ class Deployment {
     this.isPreview = context.isPreview === true
     this.timeout = MAX_TIMEOUT
     this.startTime = null
+    this.artifactId = context.artifactId
   }
 
   // Call GitHub api to fetch artifacts matching the provided name and deploy to GitHub Pages
@@ -62,7 +63,18 @@ class Deployment {
       core.debug(`Action ID: ${this.actionsId}`)
       core.debug(`Actions Workflow Run ID: ${this.workflowRun}`)
 
-      const artifactData = await getArtifactMetadata({ artifactName: this.artifactName })
+      let artifactData = null;
+      let artifactIdToUse = this.artifactId;
+      let buildVersionToUse = this.buildVersion;
+
+      if (artifactIdToUse) {
+        // If artifact_id is provided, use it directly and set buildVersion to artifact_id for uniqueness
+        buildVersionToUse = artifactIdToUse;
+        core.info(`Using provided artifact_id: ${artifactIdToUse}`);
+      } else {
+        artifactData = await getArtifactMetadata({ artifactName: this.artifactName });
+        artifactIdToUse = artifactData.id;
+      }
 
       if (artifactData?.size > ONE_GIGABYTE) {
         core.warning(
@@ -72,8 +84,8 @@ class Deployment {
 
       const deployment = await createPagesDeployment({
         githubToken: this.githubToken,
-        artifactId: artifactData.id,
-        buildVersion: this.buildVersion,
+        artifactId: artifactIdToUse,
+        buildVersion: buildVersionToUse,
         idToken,
         isPreview: this.isPreview
       })
@@ -81,13 +93,13 @@ class Deployment {
       if (deployment) {
         this.deploymentInfo = {
           ...deployment,
-          id: deployment.id || deployment.status_url?.split('/')?.pop() || this.buildVersion,
+          id: deployment.id || deployment.status_url?.split('/')?.pop() || buildVersionToUse,
           pending: true
         }
         this.startTime = Date.now()
       }
 
-      core.info(`Created deployment for ${this.buildVersion}, ID: ${this.deploymentInfo?.id}`)
+      core.info(`Created deployment for ${buildVersionToUse}, ID: ${this.deploymentInfo?.id}`)
 
       core.debug(JSON.stringify(deployment))
 
