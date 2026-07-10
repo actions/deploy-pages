@@ -1,8 +1,8 @@
-# `dist/index.js` is a special file in Actions.
+# `dist/index.mjs` is a special file in this Action.
 # When you reference an action with `uses:` in a workflow,
-# `index.js` is the code that will run.
+# `index.mjs` is the code that will run.
 # For our project, we generate this file using `ncc`
-# We need to make sure the checked-in `index.js` actually matches what we expect it to be.
+# We need to make sure the checked-in `index.mjs` actually matches what we expect it to be.
 name: Check distributables
 
 on:
@@ -45,7 +45,7 @@ jobs:
             exit 1
           fi
 
-      # If index.js was different than expected, upload the expected version as an artifact
+      # If index.mjs was different than expected, upload the expected version as an artifact
       - uses: actions/upload-artifact@v4
         if: ${{ failure() && steps.diff.conclusion == 'failure' }}
         with:

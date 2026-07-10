@@ -3,7 +3,7 @@ description: 'A GitHub Action to deploy an artifact as a GitHub Pages site'
 author: 'GitHub'
 runs:
   using: 'node24'
-  main: 'dist/index.js'
+  main: 'dist/index.mjs'
 inputs:
   token:
     description: 'GitHub token'

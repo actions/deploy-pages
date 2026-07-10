@@ -1,8 +1,13 @@
 const core = require('@actions/core')
 const github = require('@actions/github')
-const { DefaultArtifactClient } = require('@actions/artifact')
 const { RequestError } = require('@octokit/request-error')
 const HttpStatusMessages = require('http-status-messages')
+
+let ArtifactClient
+
+function setArtifactClient(client) {
+  ArtifactClient = client
+}
 
 function wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions) {
   // Specific response shape aligned with Octokit
@@ -51,7 +56,10 @@ function getArtifactsServiceOrigin() {
 }
 
 async function getArtifactMetadata({ artifactName }) {
-  const artifactClient = new DefaultArtifactClient()
+  if (!ArtifactClient) {
+    throw new Error('Artifact client is not configured. Cannot continue.')
+  }
+  const artifactClient = new ArtifactClient()
 
   // Primarily for debugging purposes, accuracy is not critical
   const requestOptions = {
@@ -172,6 +180,7 @@ async function cancelPagesDeployment({ githubToken, deploymentId }) {
 }
 
 module.exports = {
+  setArtifactClient,
   getArtifactMetadata,
   createPagesDeployment,
   getPagesDeploymentStatus,
