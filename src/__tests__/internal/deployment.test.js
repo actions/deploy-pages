@@ -121,6 +121,58 @@ describe('Deployment', () => {
       twirpScope.done()
     })
 
+    it('can successfully create a deployment with a 64-character build version', async () => {
+      process.env.GITHUB_SHA = 'a'.repeat(64)
+
+      const twirpScope = nock(process.env.ACTIONS_RESULTS_URL)
+        .post(LIST_ARTIFACTS_TWIRP_PATH)
+        .reply(
+          200,
+          {
+            artifacts: [{ databaseId: 11, name: 'github-pages', size: 221 }]
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
+
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments`,
+          method: 'POST',
+          body: bodyString => {
+            const body = JSON.parse(bodyString)
+            const keys = Object.keys(body).sort()
+            return (
+              keys.length === 3 &&
+              keys[0] === 'artifact_id' &&
+              keys[1] === 'oidc_token' &&
+              keys[2] === 'pages_build_version' &&
+              body.artifact_id === 11 &&
+              body.pages_build_version === process.env.GITHUB_SHA &&
+              body.oidc_token === fakeJwt
+            )
+          }
+        })
+        .reply(
+          200,
+          {
+            status_url: `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+            page_url: 'https://actions.github.io/is-awesome'
+          },
+          { headers: { 'content-type': 'application/json' } }
+        )
+
+      const deployment = new Deployment()
+      await deployment.create(fakeJwt)
+
+      expect(process.env.GITHUB_SHA).toHaveLength(64)
+      expect(core.setFailed).not.toHaveBeenCalled()
+      expect(core.info).toHaveBeenLastCalledWith(
+        expect.stringMatching(new RegExp(`^Created deployment for ${process.env.GITHUB_SHA}`))
+      )
+
+      twirpScope.done()
+    })
+
     it('can successfully create a preview deployment', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
