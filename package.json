@@ -1,17 +1,18 @@
 {
   "name": "deploy-pages",
   "version": "0.0.0",
+  "type": "commonjs",
   "description": "Deploy an actions artifact to GitHub Pages",
-  "main": "./dist/index.js",
+  "main": "./dist/index.mjs",
   "dependencies": {
-    "@actions/artifact": "^2.1.8",
+    "@actions/artifact": "^6.2.1",
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "@octokit/request-error": "^5.0.1",
     "http-status-messages": "^1.1.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.1",
+    "@vercel/ncc": "^0.38.4",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-github": "^4.10.2",
@@ -28,8 +29,8 @@
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
-    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
-    "test": "jest"
+    "prepare": "ncc build src/index.mjs -o dist --source-map --license licenses.txt",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "repository": {
     "type": "git",
@@ -53,7 +54,8 @@
     ],
     "collectCoverage": true,
     "collectCoverageFrom": [
-      "./src/**"
+      "./src/**",
+      "!./src/index.mjs"
     ],
     "coverageThreshold": {
       "global": {

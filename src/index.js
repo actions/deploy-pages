@@ -48,4 +48,8 @@ process.on('SIGINT', cancelHandler)
 process.on('SIGTERM', cancelHandler)
 
 // Main
-main()
+if (require.main === module) {
+  main()
+}
+
+module.exports = { main }
