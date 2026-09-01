@@ -7,6 +7,7 @@ const { MockAgent, setGlobalDispatcher } = require('undici')
 const {
   Deployment,
   MAX_TIMEOUT,
+  DEFAULT_REPORTING_INTERVAL,
   MAX_REPORTING_INTERVAL,
   ONE_GIGABYTE,
   SIZE_LIMIT_DESCRIPTION
@@ -614,6 +615,12 @@ describe('Deployment', () => {
   })
 
   describe('#check', () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+      delete process.env.INPUT_ERROR_COUNT
+      delete process.env.INPUT_REPORTING_INTERVAL
+    })
+
     const mockDeploymentStatus = (status, times = 1) => {
       mockPool
         .intercept({
@@ -1000,7 +1007,7 @@ describe('Deployment', () => {
           case 'error_count':
             return 10
           case 'reporting_interval':
-            return 0 // The default of 5000 is too long for the test
+            return 1 // The default of 5000 is too long for the test
           case 'timeout':
             return 42
           default:
@@ -1059,9 +1066,38 @@ describe('Deployment', () => {
 
       timeoutSpy.mockRestore()
       randomSpy.mockRestore()
-      delete process.env.INPUT_ERROR_COUNT
-      delete process.env.INPUT_REPORTING_INTERVAL
     })
+
+    it('does not reduce a configured interval above the backoff cap', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      process.env.INPUT_REPORTING_INTERVAL = '45000'
+      mockDeploymentStatus('deployment_in_progress')
+      mockDeploymentStatus('succeed')
+      jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy.mock.calls.map(([, interval]) => interval)).toEqual([45000, 45000])
+    })
+
+    it.each(['not-a-number', '0', '-1'])(
+      'uses the default reporting interval for invalid input %s',
+      async reportingInterval => {
+        process.env.GITHUB_SHA = 'valid-build-version'
+        process.env.INPUT_ERROR_COUNT = '10'
+        process.env.INPUT_REPORTING_INTERVAL = reportingInterval
+        mockDeploymentStatus('succeed')
+        jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+        const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+        expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), DEFAULT_REPORTING_INTERVAL)
+        expect(core.warning).toHaveBeenCalledWith(
+          `Invalid reporting_interval value; using the default of ${DEFAULT_REPORTING_INTERVAL} milliseconds.`
+        )
+      }
+    )
 
     it('jitters status check intervals by up to twenty percent', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
@@ -1077,7 +1113,6 @@ describe('Deployment', () => {
 
       timeoutSpy.mockRestore()
       randomSpy.mockRestore()
-      delete process.env.INPUT_ERROR_COUNT
     })
 
     it('keeps success backoff separate from error backoff', async () => {
@@ -1099,7 +1134,6 @@ describe('Deployment', () => {
 
       timeoutSpy.mockRestore()
       randomSpy.mockRestore()
-      delete process.env.INPUT_ERROR_COUNT
     })
   })
 
