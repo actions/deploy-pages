@@ -51,7 +51,7 @@ jobs:
 | `token` | `true` | `${{ github.token }}` | The GitHub token used to create an authenticated client - Provided for you by default! |
 | `timeout` | `false` | `"600000"` | Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes) |
 | `error_count` | `false` | `"10"` | Maximum number of status report errors before cancelling a deployment (default: 10) |
-| `reporting_interval` | `false` | `"5000"` | Time in milliseconds between two deployment status reports (default: 5 seconds) |
+| `reporting_interval` | `false` | `"5000"` | Initial time in milliseconds between deployment status reports. Successful non-terminal polls use exponential backoff up to 30 seconds, or the configured interval when higher, with ±20% jitter. Error backoff is added separately (default: 5 seconds). |
 | `artifact_name` | `false` | `"github-pages"` | The name of the artifact to deploy |
 | `preview` | `false` | `"false"` | Is this attempting to deploy a pull request as a GitHub Pages preview site? (NOTE: This feature is only in alpha currently and is not available to the public!) |
 

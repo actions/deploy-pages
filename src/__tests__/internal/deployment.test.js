@@ -4,7 +4,14 @@ const nock = require('nock')
 // For mocking network calls with native Fetch (octokit)
 const { MockAgent, setGlobalDispatcher } = require('undici')
 
-const { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION } = require('../../internal/deployment')
+const {
+  Deployment,
+  MAX_TIMEOUT,
+  DEFAULT_REPORTING_INTERVAL,
+  MAX_REPORTING_INTERVAL,
+  ONE_GIGABYTE,
+  SIZE_LIMIT_DESCRIPTION
+} = require('../../internal/deployment')
 
 const fakeJwt =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNjllMWIxOC1jOGFiLTRhZGQtOGYxOC03MzVlMzVjZGJhZjAiLCJzdWIiOiJyZXBvOnBhcGVyLXNwYS9taW55aTplbnZpcm9ubWVudDpQcm9kdWN0aW9uIiwiYXVkIjoiaHR0cHM6Ly9naXRodWIuY29tL3BhcGVyLXNwYSIsInJlZiI6InJlZnMvaGVhZHMvbWFpbiIsInNoYSI6ImEyODU1MWJmODdiZDk3NTFiMzdiMmM0YjM3M2MxZjU3NjFmYWM2MjYiLCJyZXBvc2l0b3J5IjoicGFwZXItc3BhL21pbnlpIiwicmVwb3NpdG9yeV9vd25lciI6InBhcGVyLXNwYSIsInJ1bl9pZCI6IjE1NDY0NTkzNjQiLCJydW5fbnVtYmVyIjoiMzQiLCJydW5fYXR0ZW1wdCI6IjIiLCJhY3RvciI6IllpTXlzdHkiLCJ3b3JrZmxvdyI6IkNJIiwiaGVhZF9yZWYiOiIiLCJiYXNlX3JlZiI6IiIsImV2ZW50X25hbWUiOiJwdXNoIiwicmVmX3R5cGUiOiJicmFuY2giLCJlbnZpcm9ubWVudCI6IlByb2R1Y3Rpb24iLCJqb2Jfd29ya2Zsb3dfcmVmIjoicGFwZXItc3BhL21pbnlpLy5naXRodWIvd29ya2Zsb3dzL2JsYW5rLnltbEByZWZzL2hlYWRzL21haW4iLCJpc3MiOiJodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwibmJmIjoxNjM4ODI4MDI4LCJleHAiOjE2Mzg4Mjg5MjgsImlhdCI6MTYzODgyODYyOH0.1wyupfxu1HGoTyIqatYg0hIxy2-0bMO-yVlmLSMuu2w'
@@ -35,7 +42,7 @@ describe('Deployment', () => {
         case 'token':
           return process.env.GITHUB_TOKEN
         case 'reporting_interval':
-          return 50 // Lower reporting interval to speed up test
+          return process.env.INPUT_REPORTING_INTERVAL || 50 // Lower reporting interval to speed up test
         default:
           return process.env[`INPUT_${param.toUpperCase()}`] || ''
       }
@@ -608,6 +615,42 @@ describe('Deployment', () => {
   })
 
   describe('#check', () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+      delete process.env.INPUT_ERROR_COUNT
+      delete process.env.INPUT_REPORTING_INTERVAL
+    })
+
+    const mockDeploymentStatus = (status, times = 1) => {
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          method: 'GET'
+        })
+        .reply(200, { status }, { headers: { 'content-type': 'application/json' } })
+        .times(times)
+    }
+
+    const createPendingDeployment = () => {
+      const deployment = new Deployment()
+      deployment.deploymentInfo = {
+        id: process.env.GITHUB_SHA,
+        pending: true
+      }
+      deployment.startTime = Date.now()
+      return deployment
+    }
+
+    const runWithoutWaiting = async deployment => {
+      const timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(resolve => {
+        resolve()
+        return 0
+      })
+
+      await deployment.check()
+      return timeoutSpy
+    }
+
     it('sets output to success when deployment is successful', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
@@ -964,7 +1007,7 @@ describe('Deployment', () => {
           case 'error_count':
             return 10
           case 'reporting_interval':
-            return 0 // The default of 5000 is too long for the test
+            return 1 // The default of 5000 is too long for the test
           case 'timeout':
             return 42
           default:
@@ -989,6 +1032,108 @@ describe('Deployment', () => {
       expect(core.setOutput).toBeCalledWith('status', 'succeed')
       expect(core.info).toHaveBeenLastCalledWith('Reported success!')
       twirpScope.done()
+    })
+
+    it('backs off successful non-terminal status checks', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      mockDeploymentStatus('deployment_in_progress', 2)
+      mockDeploymentStatus('succeed')
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 50)
+      expect(timeoutSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 75)
+      expect(timeoutSpy).toHaveBeenNthCalledWith(3, expect.any(Function), 113)
+
+      timeoutSpy.mockRestore()
+      randomSpy.mockRestore()
+      delete process.env.INPUT_ERROR_COUNT
+    })
+
+    it('caps the successful status check backoff', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      process.env.INPUT_REPORTING_INTERVAL = '20000'
+      mockDeploymentStatus('deployment_in_progress')
+      mockDeploymentStatus('succeed')
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy.mock.calls.map(([, interval]) => interval)).toEqual([20000, MAX_REPORTING_INTERVAL])
+
+      timeoutSpy.mockRestore()
+      randomSpy.mockRestore()
+    })
+
+    it('does not reduce a configured interval above the backoff cap', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      process.env.INPUT_REPORTING_INTERVAL = '45000'
+      mockDeploymentStatus('deployment_in_progress')
+      mockDeploymentStatus('succeed')
+      jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy.mock.calls.map(([, interval]) => interval)).toEqual([45000, 45000])
+    })
+
+    it.each(['not-a-number', '0', '-1'])(
+      'uses the default reporting interval for invalid input %s',
+      async reportingInterval => {
+        process.env.GITHUB_SHA = 'valid-build-version'
+        process.env.INPUT_ERROR_COUNT = '10'
+        process.env.INPUT_REPORTING_INTERVAL = reportingInterval
+        mockDeploymentStatus('succeed')
+        jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+        const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+        expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), DEFAULT_REPORTING_INTERVAL)
+        expect(core.warning).toHaveBeenCalledWith(
+          `Invalid reporting_interval value; using the default of ${DEFAULT_REPORTING_INTERVAL} milliseconds.`
+        )
+      }
+    )
+
+    it('jitters status check intervals by up to twenty percent', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      mockDeploymentStatus('deployment_in_progress')
+      mockDeploymentStatus('succeed')
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(1)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 40)
+      expect(timeoutSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 90)
+
+      timeoutSpy.mockRestore()
+      randomSpy.mockRestore()
+    })
+
+    it('keeps success backoff separate from error backoff', async () => {
+      process.env.GITHUB_SHA = 'valid-build-version'
+      process.env.INPUT_ERROR_COUNT = '10'
+      mockPool
+        .intercept({
+          path: `/repos/${process.env.GITHUB_REPOSITORY}/pages/deployments/${process.env.GITHUB_SHA}`,
+          method: 'GET'
+        })
+        .reply(500, {}, { headers: { 'content-type': 'application/json' } })
+      mockDeploymentStatus('deployment_in_progress')
+      mockDeploymentStatus('succeed')
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5)
+
+      const timeoutSpy = await runWithoutWaiting(createPendingDeployment())
+
+      expect(timeoutSpy.mock.calls.map(([, interval]) => interval)).toEqual([50, 51, 75])
+
+      timeoutSpy.mockRestore()
+      randomSpy.mockRestore()
     })
   })
 

@@ -149920,8 +149920,17 @@ const finalErrorStatus = {
 }
 
 const MAX_TIMEOUT = 600000
+const DEFAULT_REPORTING_INTERVAL = 5000
+const MAX_REPORTING_INTERVAL = 30000
+const REPORTING_BACKOFF_MULTIPLIER = 1.5
+const REPORTING_JITTER_FACTOR = 0.2
 const ONE_GIGABYTE = 1073741824
 const SIZE_LIMIT_DESCRIPTION = '1 GB'
+
+function getJitteredInterval(interval) {
+  const jitter = interval * REPORTING_JITTER_FACTOR
+  return Math.round(interval - jitter + Math.random() * jitter * 2)
+}
 
 class Deployment {
   constructor() {
@@ -150034,9 +150043,19 @@ class Deployment {
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
-    const reportingInterval = Number(core.getInput('reporting_interval'))
+    const reportingIntervalInput = Number(core.getInput('reporting_interval'))
+    const initialReportingInterval =
+      Number.isFinite(reportingIntervalInput) && reportingIntervalInput > 0
+        ? reportingIntervalInput
+        : DEFAULT_REPORTING_INTERVAL
+    const maxReportingInterval = Math.max(MAX_REPORTING_INTERVAL, initialReportingInterval)
     const maxErrorCount = Number(core.getInput('error_count'))
 
+    if (initialReportingInterval !== reportingIntervalInput) {
+      core.warning(`Invalid reporting_interval value; using the default of ${DEFAULT_REPORTING_INTERVAL} milliseconds.`)
+    }
+
+    let reportingInterval = initialReportingInterval
     let errorCount = 0
 
     // Time in milliseconds between two deployment status report when status errored, default 0.
@@ -150047,7 +150066,7 @@ class Deployment {
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
     while (true) {
       // Handle reporting interval
-      await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
+      await new Promise(resolve => setTimeout(resolve, getJitteredInterval(reportingInterval + errorReportingInterval)))
 
       // Check status
       try {
@@ -150075,6 +150094,7 @@ class Deployment {
 
         // reset the error reporting interval once get the proper status back.
         errorReportingInterval = 0
+        reportingInterval = Math.min(Math.round(reportingInterval * REPORTING_BACKOFF_MULTIPLIER), maxReportingInterval)
       } catch (error) {
         core.error(error.stack)
 
@@ -150138,7 +150158,14 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }
+module.exports = {
+  Deployment,
+  MAX_TIMEOUT,
+  DEFAULT_REPORTING_INTERVAL,
+  MAX_REPORTING_INTERVAL,
+  ONE_GIGABYTE,
+  SIZE_LIMIT_DESCRIPTION
+}
 
 
 /***/ }),
