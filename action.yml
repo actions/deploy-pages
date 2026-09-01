@@ -18,7 +18,7 @@ inputs:
     required: false
     default: '10'
   reporting_interval:
-    description: 'Time in milliseconds between two deployment status report (default: 5 seconds)'
+    description: 'Initial time in milliseconds between deployment status reports; subsequent intervals use capped backoff and jitter (default: 5 seconds)'
     required: false
     default: '5000'
   artifact_name:

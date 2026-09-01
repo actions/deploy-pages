@@ -149920,8 +149920,16 @@ const finalErrorStatus = {
 }
 
 const MAX_TIMEOUT = 600000
+const MAX_REPORTING_INTERVAL = 30000
+const REPORTING_BACKOFF_MULTIPLIER = 1.5
+const REPORTING_JITTER_FACTOR = 0.2
 const ONE_GIGABYTE = 1073741824
 const SIZE_LIMIT_DESCRIPTION = '1 GB'
+
+function getJitteredInterval(interval) {
+  const jitter = interval * REPORTING_JITTER_FACTOR
+  return Math.round(interval - jitter + Math.random() * jitter * 2)
+}
 
 class Deployment {
   constructor() {
@@ -150034,7 +150042,7 @@ class Deployment {
     }
 
     const deploymentId = this.deploymentInfo.id || this.buildVersion
-    const reportingInterval = Number(core.getInput('reporting_interval'))
+    let reportingInterval = Number(core.getInput('reporting_interval'))
     const maxErrorCount = Number(core.getInput('error_count'))
 
     let errorCount = 0
@@ -150047,7 +150055,7 @@ class Deployment {
     /*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
     while (true) {
       // Handle reporting interval
-      await new Promise(resolve => setTimeout(resolve, reportingInterval + errorReportingInterval))
+      await new Promise(resolve => setTimeout(resolve, getJitteredInterval(reportingInterval + errorReportingInterval)))
 
       // Check status
       try {
@@ -150075,6 +150083,10 @@ class Deployment {
 
         // reset the error reporting interval once get the proper status back.
         errorReportingInterval = 0
+        reportingInterval = Math.min(
+          Math.round(reportingInterval * REPORTING_BACKOFF_MULTIPLIER),
+          MAX_REPORTING_INTERVAL
+        )
       } catch (error) {
         core.error(error.stack)
 
@@ -150138,7 +150150,13 @@ class Deployment {
   }
 }
 
-module.exports = { Deployment, MAX_TIMEOUT, ONE_GIGABYTE, SIZE_LIMIT_DESCRIPTION }
+module.exports = {
+  Deployment,
+  MAX_TIMEOUT,
+  MAX_REPORTING_INTERVAL,
+  ONE_GIGABYTE,
+  SIZE_LIMIT_DESCRIPTION
+}
 
 
 /***/ }),
