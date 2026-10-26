@@ -7,7 +7,7 @@
     "@actions/artifact": "^2.1.8",
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@octokit/request-error": "^5.0.1",
+    "@octokit/request-error": "5.1.1",
     "http-status-messages": "^1.1.0"
   },
   "devDependencies": {
@@ -19,7 +19,7 @@
     "make-coverage-badge": "^1.2.0",
     "nock": "^13.5.4",
     "prettier": "^3.3.3",
-    "undici": "^6.19.2"
+    "undici": "6.29.1"
   },
   "scripts": {
     "all": "npm run format && npm run lint && npm run prepare && npm run test && npm run coverage-badge",
@@ -61,5 +61,40 @@
         "statements": 70
       }
     }
+  },
+  "overrides": {
+    "@octokit/request-error@2": "5.1.1",
+    "@octokit/plugin-paginate-rest@2": "9.2.2",
+    "@octokit/request@5": "8.4.1",
+    "undici@5": "6.29.1",
+    "@fastify/busboy@2": "3.2.4",
+    "@octokit/plugin-paginate-rest@9": "9.2.2",
+    "@octokit/request@8": "8.4.1",
+    "@octokit/request-error@5": "5.1.1",
+    "brace-expansion@2": "2.1.7",
+    "glob@10": "10.5.0",
+    "minimatch@9": "9.0.9",
+    "brace-expansion@1": "1.1.21",
+    "cross-spawn@7": "7.0.6",
+    "form-data@4": "4.0.6",
+    "lodash@4": "4.18.1",
+    "minimatch@3": "3.1.5",
+    "path-to-regexp@6": "6.3.0",
+    "minimatch@5": "5.1.9",
+    "unzip-stream@0": "0.3.4",
+    "uuid@8": "11.1.1",
+    "yaml@1": "1.10.3",
+    "@babel/core@7": "7.29.7",
+    "@babel/helpers@7": "7.29.10",
+    "@babel/runtime@7": "7.29.10",
+    "ajv@6": "6.15.0",
+    "browserslist@4": "4.29.5",
+    "flatted@3": "3.4.4",
+    "js-yaml@3": "3.15.2",
+    "js-yaml@4": "4.3.2",
+    "micromatch@4": "4.0.8",
+    "picomatch@2": "2.3.2",
+    "semver@6": "6.3.1",
+    "undici@6": "6.29.1"
   }
 }
