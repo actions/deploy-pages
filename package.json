@@ -4,10 +4,10 @@
   "description": "Deploy an actions artifact to GitHub Pages",
   "main": "./dist/index.js",
   "dependencies": {
-    "@actions/artifact": "^2.1.8",
-    "@actions/core": "^1.10.1",
+    "@actions/artifact": "^6.2.1",
+    "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@octokit/request-error": "^5.0.1",
+    "@octokit/request-error": "^5.1.1",
     "http-status-messages": "^1.1.0"
   },
   "devDependencies": {
