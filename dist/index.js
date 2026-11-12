@@ -149678,6 +149678,22 @@ const github = __nccwpck_require__(95438)
 const { DefaultArtifactClient } = __nccwpck_require__(79450)
 const { RequestError } = __nccwpck_require__(10537)
 const HttpStatusMessages = __nccwpck_require__(73703)
+const { setTimeout: sleep } = __nccwpck_require__(99397)
+
+async function listArtifactsWithRetry(artifactClient, artifactName) {
+  const maxAttempts = 5
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await artifactClient.listArtifacts()
+    if (response.artifacts.some(artifact => artifact.name === artifactName) || attempt === maxAttempts) {
+      return response
+    }
+
+    // A finalized upload can briefly be absent from the artifact service's listing.
+    const delay = 1000 * 2 ** (attempt - 1)
+    core.info(`Artifact "${artifactName}" is not visible yet. Retrying in ${delay}ms (${attempt}/${maxAttempts}).`)
+    await sleep(delay)
+  }
+}
 
 function wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions) {
   // Specific response shape aligned with Octokit
@@ -149743,7 +149759,7 @@ async function getArtifactMetadata({ artifactName }) {
 
     let response
     try {
-      const twirpResponse = await artifactClient.listArtifacts()
+      const twirpResponse = await listArtifactsWithRetry(artifactClient, artifactName)
       response = wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions)
     } catch (twirpError) {
       core.error('Listing artifact metadata failed', twirpError)
@@ -150391,6 +150407,14 @@ module.exports = require("node:querystring");
 
 "use strict";
 module.exports = require("node:stream");
+
+/***/ }),
+
+/***/ 99397:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:timers/promises");
 
 /***/ }),
 

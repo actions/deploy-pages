@@ -3,6 +3,22 @@ const github = require('@actions/github')
 const { DefaultArtifactClient } = require('@actions/artifact')
 const { RequestError } = require('@octokit/request-error')
 const HttpStatusMessages = require('http-status-messages')
+const { setTimeout: sleep } = require('node:timers/promises')
+
+async function listArtifactsWithRetry(artifactClient, artifactName) {
+  const maxAttempts = 5
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await artifactClient.listArtifacts()
+    if (response.artifacts.some(artifact => artifact.name === artifactName) || attempt === maxAttempts) {
+      return response
+    }
+
+    // A finalized upload can briefly be absent from the artifact service's listing.
+    const delay = 1000 * 2 ** (attempt - 1)
+    core.info(`Artifact "${artifactName}" is not visible yet. Retrying in ${delay}ms (${attempt}/${maxAttempts}).`)
+    await sleep(delay)
+  }
+}
 
 function wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions) {
   // Specific response shape aligned with Octokit
@@ -68,7 +84,7 @@ async function getArtifactMetadata({ artifactName }) {
 
     let response
     try {
-      const twirpResponse = await artifactClient.listArtifacts()
+      const twirpResponse = await listArtifactsWithRetry(artifactClient, artifactName)
       response = wrapTwirpResponseLikeOctokit(twirpResponse, requestOptions)
     } catch (twirpError) {
       core.error('Listing artifact metadata failed', twirpError)
