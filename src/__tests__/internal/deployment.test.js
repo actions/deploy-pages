@@ -4,6 +4,8 @@ const nock = require('nock')
 // For mocking network calls with native Fetch (octokit)
 const { MockAgent, setGlobalDispatcher } = require('undici')
 
+jest.mock('node:timers/promises', () => ({ setTimeout: jest.fn().mockResolvedValue() }))
+
 const {
   Deployment,
   MAX_TIMEOUT,
@@ -75,10 +77,12 @@ describe('Deployment', () => {
       delete process.env.INPUT_PREVIEW
     })
 
-    it('can successfully create a deployment', async () => {
+    it('can create a deployment after the uploaded artifact becomes visible', async () => {
       process.env.GITHUB_SHA = 'valid-build-version'
 
       const twirpScope = nock(process.env.ACTIONS_RESULTS_URL)
+        .post(LIST_ARTIFACTS_TWIRP_PATH)
+        .reply(200, { artifacts: [] }, { headers: { 'content-type': 'application/json' } })
         .post(LIST_ARTIFACTS_TWIRP_PATH)
         .reply(
           200,
@@ -452,6 +456,7 @@ describe('Deployment', () => {
 
       const twirpScope = nock(process.env.ACTIONS_RESULTS_URL)
         .post(LIST_ARTIFACTS_TWIRP_PATH)
+        .times(5)
         .reply(
           200,
           {
