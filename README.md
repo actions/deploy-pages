@@ -6,7 +6,7 @@ This action is used to deploy [Actions artifacts][artifacts] to [GitHub Pages](h
 
 ## Usage
 
-See [action.yml](action.yml) for the various `inputs` this action supports (or [below](#inputs-📥)).
+See [action.yml](action.yml) for the various `inputs` this action supports (or [below](#inputs-)).
 
 For examples that make use of this action, check out our [starter-workflows][starter-workflows] in a variety of frameworks.
 
